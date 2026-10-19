@@ -174,6 +174,33 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
 .input::placeholder { color: #9aa3b8; }
 .input:focus, .select:focus { outline: none; border-color: var(--deep); box-shadow: 0 0 0 3px rgba(12, 47, 120, .15); }
 .input[aria-invalid="true"] { border-color: var(--danger); }
+/* Radio choices (investment question) */
+.choices { border: 0; margin: 0; padding: 0; min-width: 0; }
+.choices legend { padding: 0; margin-bottom: 6px; font-size: .82rem; font-weight: 700; color: var(--card-ink); }
+.choices legend .req { color: var(--danger); }
+.choices__grid { display: grid; gap: 8px; }
+.choice {
+  position: relative;
+  display: flex; align-items: center; gap: 10px;
+  min-height: 46px; padding: 10px 12px;
+  background: var(--field); border: 1px solid var(--line); border-radius: 10px;
+  font-size: .93rem; font-weight: 500; color: var(--card-ink); cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+}
+.field .choice { font-size: .93rem; font-weight: 500; color: var(--card-ink); }   /* beat ".field label" */
+.choice:hover { border-color: #c4cde0; }
+.choice input {
+  appearance: none; -webkit-appearance: none; margin: 0; flex: none;
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid #b8c1d6; background: var(--card);
+  display: grid; place-items: center; cursor: pointer;
+}
+.choice input::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--deep); transform: scale(0); transition: transform .15s ease; }
+.choice input:checked { border-color: var(--deep); }
+.choice input:checked::after { transform: scale(1); }
+.field .choice:has(input:checked) { border-color: var(--deep); background: #eef3fd; font-weight: 700; color: var(--deep); }
+.choice:has(input:focus-visible) { box-shadow: 0 0 0 3px rgba(12, 47, 120, .2); }
+
 /* Custom dropdown: the real <select> stays in the form (hidden) and holds the value. */
 .dd { position: relative; }
 .dd select { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
@@ -469,7 +496,9 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
 .toast small { color: var(--muted); }
 .tick { color: #4ade80; font-weight: 700; }
 
+@media (min-width: 761px) { .only-stacked { display: none; } }
 @media (max-width: 760px) {
+  .only-wide { display: none; }
   .booker__body { grid-template-columns: 1fr; }
   .booker__form { border-right: 0; border-bottom: 1px solid var(--line); }
 }
@@ -585,8 +614,8 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
         <form class="booker__form" id="apply-form" novalidate>
           <h3><span data-fill="brand">Ricky</span> Strategy Call</h3>
           <div class="field">
-            <label for="a-ig">What's your YouTube or TikTok channel? <span class="req">*</span></label>
-            <input class="input" id="a-ig" name="channel" placeholder="@channel or link" required>
+            <label for="a-ig">What's your Instagram? <span class="req">*</span></label>
+            <input class="input" id="a-ig" name="instagram" autocomplete="off" placeholder="@handle" required>
           </div>
           <div class="field">
             <label for="a-exp">Where Are You At With Dropshipping? <span class="req">*</span></label>
@@ -609,9 +638,11 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
               <option>I don't have much time with my job</option>
             </select>
           </div>
-          <div class="field">
+          <!-- Investment: radio buttons when the calendar sits beside the form, a dropdown when it stacks.
+               Both stay in sync; the radios carry the form value. -->
+          <div class="field only-stacked">
             <label for="a-invest">How much have you set aside to invest in yourself and your store? <span class="req">*</span></label>
-            <select class="select" data-dropdown id="a-invest" name="investment" required>
+            <select class="select" data-dropdown id="a-invest">
               <option value="">Select</option>
               <option>Under $500</option>
               <option>$500 – $1,500</option>
@@ -620,6 +651,16 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
               <option>$5,000+</option>
             </select>
           </div>
+          <fieldset class="field choices only-wide">
+            <legend>How much have you set aside to invest in yourself and your store? <span class="req">*</span></legend>
+            <div class="choices__grid">
+              <label class="choice"><input type="radio" name="investment" value="Under $500" required><span>Under $500</span></label>
+              <label class="choice"><input type="radio" name="investment" value="$500 – $1,500"><span>$500 – $1,500</span></label>
+              <label class="choice"><input type="radio" name="investment" value="$1,500 – $3,000"><span>$1,500 – $3,000</span></label>
+              <label class="choice"><input type="radio" name="investment" value="$3,000 – $5,000"><span>$3,000 – $5,000</span></label>
+              <label class="choice"><input type="radio" name="investment" value="$5,000+"><span>$5,000+</span></label>
+            </div>
+          </fieldset>
         </form>
 
         <div class="booker__cal">
@@ -898,7 +939,9 @@ $("#back-to-form").addEventListener("click", () => { $("#optin-form").scrollInto
 /* ---------- Application form gates the Calendly booking ---------- */
 const applyForm = $("#apply-form");
 function checkApply() {
-  const ok = $$("[required]", applyForm).every(el => el.value.trim() && (el.type !== "email" || emailOk(el.value.trim())));
+  const ok = $$("[required]", applyForm).every(el => el.type === "radio"
+    ? !!applyForm.querySelector(`input[name="${el.name}"]:checked`)
+    : el.value.trim() && (el.type !== "email" || emailOk(el.value.trim())));
   $("#cal-embed").classList.toggle("is-locked", !ok);
   $("#cal-embed").inert = !ok;
   $("#cal-lock").hidden = ok;
@@ -978,12 +1021,19 @@ $$("select[data-dropdown]").forEach(sel => {
     else if (e.key === "Escape" && isOpen) { e.preventDefault(); close(); }
     else if (e.key === "Tab" && isOpen) close();
   });
+  sel.addEventListener("dd:sync", render);   // value set from outside (e.g. the matching radio)
   list.addEventListener("mousedown", e => e.preventDefault());   // keep focus on the button
   list.addEventListener("click", e => { const li = e.target.closest(".dd__opt"); if (li) choose(+li.dataset.i); });
   list.addEventListener("mousemove", e => { const li = e.target.closest(".dd__opt"); if (li && +li.dataset.i !== active) setActive(+li.dataset.i); });
   render();
 });
 document.addEventListener("click", e => { if (openDropdown && !e.target.closest(".dd.is-open")) openDropdown(); });
+
+// Keep the investment dropdown (stacked layout) and radios (side-by-side layout) in sync.
+const investSel = $("#a-invest");
+const investRadios = $$('input[name="investment"]', applyForm);
+investSel.addEventListener("change", () => { investRadios.forEach(r => { r.checked = r.value === investSel.value; }); });
+investRadios.forEach(r => r.addEventListener("change", () => { investSel.value = r.value; investSel.dispatchEvent(new Event("dd:sync")); }));
 
 /* ---------- Calendly ---------- */
 let calendlyKey = null;   // the name + email Calendly was last opened with
