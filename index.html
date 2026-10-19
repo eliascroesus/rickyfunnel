@@ -93,6 +93,13 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
 }
 .sub--big { font-size: clamp(1.5rem, 4.2vw, 2.3rem); line-height: 1.2; max-width: 32ch; }
 @media (min-width: 420px) { .sub--big .hl { white-space: nowrap; } }
+.br-wide { display: none; }
+/* Wide screens: exactly two lines, with the font scaled so the longer line
+   ("Views That Don't Sell & Products That Die?", about 23em wide) fits the column. */
+@media (min-width: 760px) {
+  .br-wide { display: inline; }
+  .sub--big { max-width: none; white-space: nowrap; font-size: min(2.3rem, calc((min(100vw, 880px) - 56px) / 23)); }
+}
 .step {
   font-size: clamp(1.1rem, 2.8vw, 1.6rem);
   font-weight: 800;
@@ -521,7 +528,7 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
   <div class="wrap">
 
     <h1 class="sub">Check Your <span class="hl">Email</span> + <span class="hl">SMS</span> For Discord Access…</h1>
-    <h2 class="sub sub--big">Do You Want To <span class="hl">Break Free</span> From <span class="hl">Views That Don't&nbsp;Sell</span> &amp; <span class="hl">Products That Die?</span></h2>
+    <h2 class="sub sub--big">Do You Want To <span class="hl">Break Free</span> From<br class="br-wide"> <span class="hl">Views That Don't&nbsp;Sell</span> &amp; <span class="hl">Products That Die?</span></h2>
     <h2 class="step"><b>Step #1</b> Watch This Video To See How I Went From <b>$16/hr</b> To <b>$10K In 3 Days</b>.</h2>
 
     <div class="video" data-video="vsl">
