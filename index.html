@@ -855,29 +855,36 @@ $("#back-to-form").addEventListener("click", () => { $("#optin-form").scrollInto
 
 /* ---------- Application form gates the Calendly booking ---------- */
 const applyForm = $("#apply-form");
-function checkApply() {
+function checkApply(reload) {
   const ok = $$("[required]", applyForm).every(el => el.value.trim() && (el.type !== "email" || emailOk(el.value.trim())));
   $("#cal-embed").classList.toggle("is-locked", !ok);
   $("#cal-lock").hidden = ok;
   $("#st-form").classList.toggle("on", !ok);
   $("#st-book").classList.toggle("on", ok);
-  if (ok) initCalendly();
+  // Open Calendly the first time the form is complete; refresh it only when a field is finished
+  // (change), so it doesn't reload on every keystroke.
+  if (ok && (reload === true || calendlyKey === null)) initCalendly();
   return ok;
 }
-applyForm.addEventListener("input", checkApply);
-applyForm.addEventListener("change", checkApply);
+applyForm.addEventListener("input", () => checkApply(false));
+applyForm.addEventListener("change", () => checkApply(true));
 
 /* ---------- Calendly ---------- */
-let calendlyStarted = false;
+let calendlyKey = null;   // the name + email Calendly was last opened with
+function calendlyPrefill() {
+  const name = $("#a-name").value.trim().replace(/\s+/g, " ");
+  const [firstName, ...rest] = name.split(" ");
+  // Send both forms so the name fills in whether the event asks for "Name" or "First / Last name".
+  return { name, firstName, lastName: rest.join(" "), email: $("#a-email").value.trim() };
+}
 function initCalendly() {
-  if (calendlyStarted) return;
   if (!window.Calendly) { setTimeout(initCalendly, 300); return; }   // widget.js loads async
-  calendlyStarted = true;
-  Calendly.initInlineWidget({
-    url: CONFIG.calendlyUrl,
-    parentElement: $("#cal-embed"),
-    prefill: { name: $("#a-name").value.trim(), email: $("#a-email").value.trim() }
-  });
+  const prefill = calendlyPrefill();
+  const key = prefill.name + "|" + prefill.email;
+  if (key === calendlyKey) return;
+  calendlyKey = key;
+  $("#cal-embed").innerHTML = "";
+  Calendly.initInlineWidget({ url: CONFIG.calendlyUrl, parentElement: $("#cal-embed"), prefill });
 }
 // Calendly tells the page when a call is booked; then move on to page 3.
 window.addEventListener("message", e => {
