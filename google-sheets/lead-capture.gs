@@ -1,7 +1,9 @@
 /**
  * Lead capture for Ricky's funnel.
- *   - Page 1 opt-in        → adds a new row (name, email, phone, tracking).
+ *   - Page 1 opt-in        → adds a new row (name, email, phone, tracking, A/B version).
  *   - Page 2 application   → fills that person's answers into their row (matched by email).
+ *                            V1 (/apply) fills Instagram, Experience, Main Problem, Investment;
+ *                            V2 (/apply-2) fills Situation, Biggest Goal, Obstacles, Instagram, Investment.
  *   - Calendly booking     → stamps "Call Booked At" on their row.
  *
  * Setup (once):
@@ -45,6 +47,10 @@ const COLUMNS = [
   ['Investment', 'investment'],
   ['Application At', '@application'],
   ['Call Booked At', '@booked'],
+  ['Version', 'version'],
+  ['Situation', 'situation'],
+  ['Biggest Goal', 'goal'],
+  ['Obstacles', 'obstacles'],
 ];
 const HEADERS = COLUMNS.map(([header]) => header);
 const EMAIL_COL = COLUMNS.findIndex(([, field]) => field === 'email');

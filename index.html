@@ -8,7 +8,19 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,600;0,700;0,800;1,700;1,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap">
+<script>
+  // Pick the page from the URL before anything draws, so /apply never flashes page 1.
+  (function () {
+    var pages = { "/apply": "apply", "/apply-2": "apply2", "/booked": "booked" };
+    var path = location.pathname.replace(/\/index\.html$/, "/").replace(/\.html$/, "").replace(/(.)\/+$/, "$1");
+    document.documentElement.setAttribute("data-page", pages[path] || "optin");
+  })();
+</script>
 <style>
+html:not([data-page="optin"]) #view-optin,
+html:not([data-page="apply"]) #view-apply,
+html:not([data-page="apply2"]) #view-apply2,
+html:not([data-page="booked"]) #view-booked { display: none; }
 /* Layout: three funnel steps in one file (opt-in → VSL + application → booked), each a
    black-to-midnight-blue band with a centred column, white cards for forms, gold for the one action. */
 :root {
@@ -404,6 +416,87 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
 .cal__msg strong { font-family: var(--display); font-weight: 800; font-size: 1rem; }
 .cal__msg span { font-size: .85rem; color: var(--card-muted); }
 
+/* ---------- Apply V2: one question at a time ---------- */
+.tf { max-width: 860px; position: relative; overflow: hidden; }
+.tf__progress { height: 4px; background: var(--line); }
+.tf__progress span { display: block; height: 100%; width: 0; background: var(--deep); transition: width .4s ease; }
+.tf__form { min-height: 460px; display: grid; align-content: center; padding: clamp(28px, 5vw, 56px) clamp(20px, 6vw, 64px) 76px; }
+.tf__step { display: grid; gap: 18px; }
+.tf__step.is-in { animation: tf-in .35s ease both; }
+@keyframes tf-in { from { opacity: 0; transform: translateY(18px); } }
+.tf__head { display: flex; gap: 10px; align-items: baseline; }
+.tf__num {
+  flex: none; display: inline-flex; align-items: center; gap: 3px;
+  font: 700 .85rem var(--display); color: var(--deep);
+}
+.tf__num svg { width: 13px; height: 13px; }
+.tf__title { margin: 0; text-align: left; font-family: var(--display); font-weight: 700; font-size: clamp(1.2rem, 2.6vw, 1.6rem); line-height: 1.3; color: var(--card-ink); }
+.tf__title .req { color: var(--danger); }
+.tf__body { display: grid; gap: 18px; padding-left: 26px; }
+.tf__help { margin: -8px 0 0; font-size: 1rem; color: var(--card-muted); }
+.tf__help b { color: var(--card-ink); }
+.tf__opts { display: grid; gap: 10px; max-width: 540px; }
+.tf__opt {
+  position: relative; display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px; border-radius: 10px; cursor: pointer;
+  border: 1px solid #c9d3ea; background: rgba(12, 47, 120, .04);
+  font-size: 1rem; color: var(--card-ink);
+  transition: background-color .15s ease, border-color .15s ease;
+}
+.tf__opt:hover { background: rgba(12, 47, 120, .09); }
+.tf__opt input { position: absolute; opacity: 0; pointer-events: none; }
+.tf__key {
+  flex: none; width: 26px; height: 26px; display: grid; place-items: center;
+  border: 1px solid #c9d3ea; border-radius: 6px; background: var(--card);
+  font: 700 .75rem var(--body); color: var(--deep);
+}
+.tf__opt > svg { flex: none; width: 18px; height: 18px; margin-left: auto; color: var(--deep); visibility: hidden; }
+.tf__opt:has(input:checked) { border-color: var(--deep); background: rgba(12, 47, 120, .1); }
+.tf__opt:has(input:checked) .tf__key { background: var(--deep); border-color: var(--deep); color: #fff; }
+.tf__opt:has(input:checked) > svg { visibility: visible; }
+.tf__opt:has(input:focus-visible) { box-shadow: 0 0 0 3px rgba(12, 47, 120, .2); }
+.tf__opt.is-picked { animation: tf-blink .16s 2; }
+@keyframes tf-blink { 50% { background: rgba(12, 47, 120, .2); } }
+.tf__input {
+  width: 100%; max-width: 640px;
+  border: 0; border-bottom: 2px solid #c9d3ea; border-radius: 0; background: transparent;
+  padding: 8px 0; font: 400 clamp(1.15rem, 2.4vw, 1.45rem) var(--body); color: var(--card-ink);
+}
+.tf__input::placeholder { color: #a9b3c9; }
+.tf__input:focus { outline: none; border-bottom-color: var(--deep); }
+.tf__actions { display: flex; align-items: center; gap: 12px; }
+.tf__ok {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 18px; border: 0; border-radius: 8px; cursor: pointer;
+  background: var(--deep); color: #fff; font: 700 1rem var(--display);
+}
+.tf__ok svg { width: 16px; height: 16px; }
+.tf__ok:hover { filter: brightness(1.15); }
+.tf__hint { font-size: .8rem; color: var(--card-muted); }
+@media (hover: none) { .tf__hint { display: none; } }
+.tf__err { margin: 0; font-size: .88rem; font-weight: 600; color: var(--danger); }
+.tf__nav { position: absolute; right: 16px; bottom: 16px; display: flex; gap: 2px; }
+.tf__nav button {
+  width: 38px; height: 34px; display: grid; place-items: center; border: 0; cursor: pointer;
+  background: var(--deep); color: #fff;
+}
+.tf__nav button:first-child { border-radius: 8px 0 0 8px; }
+.tf__nav button:last-child { border-radius: 0 8px 8px 0; }
+.tf__nav button:disabled { opacity: .35; cursor: default; }
+.tf__nav svg { width: 18px; height: 18px; }
+.tf__cal { position: relative; }
+.tf__cal .cal-embed { height: 700px; }
+.tf__cal.is-waiting { position: absolute; left: 0; right: 0; top: 4px; visibility: hidden; pointer-events: none; }
+.tf__calhead {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin: 0; padding: 14px 16px; border-bottom: 1px solid var(--line);
+  font: 700 .95rem var(--display); color: var(--deep); text-align: center;
+}
+.tf__calhead svg { flex: none; width: 18px; height: 18px; }
+.tf.is-done .tf__form, .tf.is-done .tf__nav { display: none; }
+.tf.is-done .tf__cal { animation: tf-in .4s ease both; }
+@media (max-width: 560px) { .tf__body { padding-left: 0; } }
+
 /* ---------- Booked ---------- */
 .booking {
   width: 100%; max-width: 620px;
@@ -507,7 +600,7 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
 <body>
 
 <!-- =====================================================================
-     PAGE 1 — OPT-IN  (#optin, default)
+     PAGE 1 — OPT-IN  (/)
      ===================================================================== -->
 <main class="view" id="view-optin" data-view="optin">
   <div class="wrap wrap--narrow">
@@ -558,15 +651,15 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
     <section class="receipts" aria-label="My results">
       <h2 class="sub">This Method <span class="hl">Changed Everything</span></h2>
       <div class="receipts__grid">
-        <figure class="receipt"><img src="assets/ricky/sales-4-days.png" alt="Shopify dashboard showing $11,249 in total sales and 106 orders from Sep 10 to Sep 13"><figcaption><b>$11,249</b> in 4 days</figcaption></figure>
-        <figure class="receipt"><img src="assets/ricky/views-48-hours.png" alt="YouTube Studio realtime showing 11,678,367 views in the last 48 hours"><figcaption><b>11.6M views</b> in 48 hours</figcaption></figure>
-        <figure class="receipt"><video src="assets/ricky/subscribers.mp4" poster="assets/ricky/subscribers-poster.jpg" autoplay muted loop playsinline aria-label="Live subscriber count at 719,151"></video><figcaption><b>719K</b> subscribers</figcaption></figure>
-        <figure class="receipt"><img src="assets/ricky/sales-30-days-phone.jpg" alt="Shopify app showing sales over the last 30 days"></figure>
-        <figure class="receipt"><img src="assets/ricky/orders-to-ship.jpg" alt="Stacks of packed orders and shipping labels ready to go out"><figcaption>Orders stacked up to ship</figcaption></figure>
-        <figure class="receipt"><img src="assets/ricky/sales-30-days-laptop.jpg" alt="Shopify gross sales report on a laptop"></figure>
-        <figure class="receipt"><img src="assets/ricky/play-buttons.jpg" alt="YouTube Silver Play Buttons on a table"><figcaption><b>YouTube Play Buttons</b></figcaption></figure>
-        <figure class="receipt"><img src="assets/ricky/sales-one-day.webp" alt="Shopify app showing $2,159.76 in sales and 22 orders in one day"><figcaption><b>$2,159</b> in one day</figcaption></figure>
-        <figure class="receipt"><img src="assets/ricky/play-button-analytics.jpg" alt="YouTube Play Button held in front of channel analytics"><figcaption>Channel analytics</figcaption></figure>
+        <figure class="receipt"><img loading="lazy" src="/assets/ricky/sales-4-days.png" alt="Shopify dashboard showing $11,249 in total sales and 106 orders from Sep 10 to Sep 13"><figcaption><b>$11,249</b> in 4 days</figcaption></figure>
+        <figure class="receipt"><img loading="lazy" src="/assets/ricky/views-48-hours.png" alt="YouTube Studio realtime showing 11,678,367 views in the last 48 hours"><figcaption><b>11.6M views</b> in 48 hours</figcaption></figure>
+        <figure class="receipt"><video src="/assets/ricky/subscribers.mp4" poster="/assets/ricky/subscribers-poster.jpg" data-autoplay preload="none" muted loop playsinline aria-label="Live subscriber count at 719,151"></video><figcaption><b>719K</b> subscribers</figcaption></figure>
+        <figure class="receipt"><img loading="lazy" src="/assets/ricky/sales-30-days-phone.jpg" alt="Shopify app showing sales over the last 30 days"></figure>
+        <figure class="receipt"><img loading="lazy" src="/assets/ricky/orders-to-ship.jpg" alt="Stacks of packed orders and shipping labels ready to go out"><figcaption>Orders stacked up to ship</figcaption></figure>
+        <figure class="receipt"><img loading="lazy" src="/assets/ricky/sales-30-days-laptop.jpg" alt="Shopify gross sales report on a laptop"></figure>
+        <figure class="receipt"><img loading="lazy" src="/assets/ricky/play-buttons.jpg" alt="YouTube Silver Play Buttons on a table"><figcaption><b>YouTube Play Buttons</b></figcaption></figure>
+        <figure class="receipt"><img loading="lazy" src="/assets/ricky/sales-one-day.webp" alt="Shopify app showing $2,159.76 in sales and 22 orders in one day"><figcaption><b>$2,159</b> in one day</figcaption></figure>
+        <figure class="receipt"><img loading="lazy" src="/assets/ricky/play-button-analytics.jpg" alt="YouTube Play Button held in front of channel analytics"><figcaption>Channel analytics</figcaption></figure>
       </div>
     </section>
 
@@ -581,7 +674,7 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
 </main>
 
 <!-- =====================================================================
-     PAGE 2 — THANK YOU + VSL + APPLICATION  (#apply)
+     PAGE 2, VERSION 1 — THANK YOU + VSL + APPLICATION FORM  (/apply)
      ===================================================================== -->
 <main class="view" id="view-apply" data-view="apply" hidden>
   <div class="wrap">
@@ -682,7 +775,51 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
 </main>
 
 <!-- =====================================================================
-     PAGE 3 — POST-BOOKING  (#booked)
+     PAGE 2, VERSION 2 — THANK YOU + VSL + ONE-QUESTION-AT-A-TIME APPLICATION  (/apply-2)
+     Questions live in APPLY2_QUESTIONS in the script below.
+     ===================================================================== -->
+<main class="view" id="view-apply2" data-view="apply2" hidden>
+  <div class="wrap">
+
+    <h1 class="sub">Check Your <span class="hl">Email</span> + <span class="hl">SMS</span> For Discord Access…</h1>
+    <h2 class="sub sub--big">Do You Want To <span class="hl">Break Free</span> From<br class="br-wide"> <span class="hl">Views That Don't&nbsp;Sell</span> &amp; <span class="hl">Products That Die?</span></h2>
+    <h2 class="step"><b>Step #1</b> Watch This Video To See How I Went From <b>$16/hr</b> To <b>$10K In 3 Days</b>.</h2>
+
+    <div class="video" data-video="vsl">
+      <div class="video__ph">
+        <span class="video__tag">Video placeholder</span>
+        <button class="video__play" type="button" aria-label="Play main VSL"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8z"/></svg></button>
+        <span class="video__name">Main VSL</span>
+        <span class="video__meta">Swap in your video embed · ~10–20 min</span>
+      </div>
+      <div class="video__bar"><span></span></div>
+    </div>
+
+    <h2 class="step"><b>Step #2</b> Fill Out This Application To Apply For The 1-1 <span data-fill="program">YouTube Shorts Dropshipping</span> Mentorship</h2>
+
+    <section class="card tf" id="tf" aria-label="Strategy call application">
+      <div class="tf__progress" aria-hidden="true"><span id="tf-bar"></span></div>
+      <form class="tf__form" id="tf-form" novalidate></form>
+      <div class="tf__nav" id="tf-nav">
+        <button type="button" id="tf-prev" aria-label="Previous question"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
+        <button type="button" id="tf-next" aria-label="Next question"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+      </div>
+      <!-- Calendly loads here (hidden) as soon as the page opens, and shows once the last answer is in -->
+      <div class="tf__cal is-waiting" id="tf-cal" inert>
+        <p class="tf__calhead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg> Application done. Last step: pick a time for your call.</p>
+        <div class="cal-embed" id="tf-embed"></div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <nav><a href="#privacy">Privacy Policy</a><a href="#terms">Terms of Service</a><a href="#disclaimer">Disclaimer</a></nav>
+      Results vary and are not typical. Most people who try dropshipping don't make money.
+    </footer>
+  </div>
+</main>
+
+<!-- =====================================================================
+     PAGE 3 — POST-BOOKING  (/booked)
      ===================================================================== -->
 <main class="view" id="view-booked" data-view="booked" hidden>
   <div class="wrap">
@@ -776,17 +913,17 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
     <!-- Ricky's own results. Files live in assets/ricky/ -->
     <section class="receipts" aria-label="Ricky's results">
       <div class="receipts__grid">
-        <figure class="receipt"><img src="assets/ricky/sales-4-days.png" alt="Shopify dashboard showing $11,249 in total sales and 106 orders from Sep 10 to Sep 13"><figcaption><b>$11,249</b> in 4 days</figcaption></figure>
-        <figure class="receipt"><img src="assets/ricky/youtube-september-91m.png" alt="YouTube Studio showing 91M views and 565.7K new subscribers in September"><figcaption><b>91M views</b> in September</figcaption></figure>
-        <figure class="receipt"><img src="assets/ricky/play-buttons-car.jpg" alt="Two YouTube Silver Play Buttons on the front of a white G-Wagon"><figcaption>Two <b>Silver Play Buttons</b></figcaption></figure>
-        <figure class="receipt"><img src="assets/ricky/sales-today-payout.png" alt="Shopify app showing $1,550 in sales today and a $3,525.74 payout tomorrow"><figcaption><b>$3,525</b> payout tomorrow</figcaption></figure>
-        <figure class="receipt"><video src="assets/ricky/subscribers.mp4" poster="assets/ricky/subscribers-poster.jpg" autoplay muted loop playsinline aria-label="Live subscriber count at 719,151"></video><figcaption><b>719K</b> subscribers</figcaption></figure>
-        <figure class="receipt"><img src="assets/ricky/views-48-hours.png" alt="YouTube Studio realtime showing 11,678,367 views in the last 48 hours"><figcaption><b>11.6M views</b> in 48 hours</figcaption></figure>
-        <figure class="receipt"><video src="assets/ricky/youtube-studio-live.mp4" poster="assets/ricky/youtube-studio-live-poster.jpg" autoplay muted loop playsinline aria-label="YouTube Studio on a laptop showing the last 28 days"></video></figure>
-        <figure class="receipt"><video src="assets/ricky/shopify-live.mp4" poster="assets/ricky/shopify-live-poster.jpg" autoplay muted loop playsinline aria-label="Shopify app on a phone showing the last 30 days of sales"></video></figure>
-        <figure class="receipt"><img src="assets/ricky/youtube-september-60m.png" alt="YouTube Studio showing 60.4M views and 137.3K new subscribers in September"><figcaption><b>60.4M views</b> in September</figcaption></figure>
-        <figure class="receipt"><img src="assets/ricky/label-roll.jpg" alt="Holding up a long roll of printed shipping labels"><figcaption>Shipping labels printed and ready</figcaption></figure>
-        <figure class="receipt"><img src="assets/ricky/orders-to-ship.jpg" alt="Stacks of packed orders and shipping labels ready to go out"><figcaption>Orders stacked up to ship</figcaption></figure>
+        <figure class="receipt"><img loading="lazy" src="/assets/ricky/sales-4-days.png" alt="Shopify dashboard showing $11,249 in total sales and 106 orders from Sep 10 to Sep 13"><figcaption><b>$11,249</b> in 4 days</figcaption></figure>
+        <figure class="receipt"><img loading="lazy" src="/assets/ricky/youtube-september-91m.png" alt="YouTube Studio showing 91M views and 565.7K new subscribers in September"><figcaption><b>91M views</b> in September</figcaption></figure>
+        <figure class="receipt"><img loading="lazy" src="/assets/ricky/play-buttons-car.jpg" alt="Two YouTube Silver Play Buttons on the front of a white G-Wagon"><figcaption>Two <b>Silver Play Buttons</b></figcaption></figure>
+        <figure class="receipt"><img loading="lazy" src="/assets/ricky/sales-today-payout.png" alt="Shopify app showing $1,550 in sales today and a $3,525.74 payout tomorrow"><figcaption><b>$3,525</b> payout tomorrow</figcaption></figure>
+        <figure class="receipt"><video src="/assets/ricky/subscribers.mp4" poster="/assets/ricky/subscribers-poster.jpg" data-autoplay preload="none" muted loop playsinline aria-label="Live subscriber count at 719,151"></video><figcaption><b>719K</b> subscribers</figcaption></figure>
+        <figure class="receipt"><img loading="lazy" src="/assets/ricky/views-48-hours.png" alt="YouTube Studio realtime showing 11,678,367 views in the last 48 hours"><figcaption><b>11.6M views</b> in 48 hours</figcaption></figure>
+        <figure class="receipt"><video src="/assets/ricky/youtube-studio-live.mp4" poster="/assets/ricky/youtube-studio-live-poster.jpg" data-autoplay preload="none" muted loop playsinline aria-label="YouTube Studio on a laptop showing the last 28 days"></video></figure>
+        <figure class="receipt"><video src="/assets/ricky/shopify-live.mp4" poster="/assets/ricky/shopify-live-poster.jpg" data-autoplay preload="none" muted loop playsinline aria-label="Shopify app on a phone showing the last 30 days of sales"></video></figure>
+        <figure class="receipt"><img loading="lazy" src="/assets/ricky/youtube-september-60m.png" alt="YouTube Studio showing 60.4M views and 137.3K new subscribers in September"><figcaption><b>60.4M views</b> in September</figcaption></figure>
+        <figure class="receipt"><img loading="lazy" src="/assets/ricky/label-roll.jpg" alt="Holding up a long roll of printed shipping labels"><figcaption>Shipping labels printed and ready</figcaption></figure>
+        <figure class="receipt"><img loading="lazy" src="/assets/ricky/orders-to-ship.jpg" alt="Stacks of packed orders and shipping labels ready to go out"><figcaption>Orders stacked up to ship</figcaption></figure>
       </div>
     </section>
 
@@ -833,6 +970,10 @@ const CONFIG = {
     faqLate: ""
   },
 
+  // A/B test for page 2: share of new opt-ins sent to /apply (V1). The rest go to /apply-2 (V2).
+  // Each visitor keeps the version they got. Add ?v=1 or ?v=2 to a link to force one for testing.
+  abSplitV1: 0.5,
+
   // Calendly booking page shown on page 2. The "hide_*" options strip Calendly's own text.
   calendlyUrl: "https://calendly.com/eliascroesus/ricky-strategy-call?hide_event_type_details=1&hide_landing_page_details=1&hide_gdpr_banner=1",
 
@@ -847,6 +988,38 @@ const CONFIG = {
     { name: "Ryan",   city: "London" }
   ]
 };
+
+// Page 2, version 2 questions (one at a time). type "choice" = pick one, "text" = typed answer.
+// "key" is the spreadsheet field: situation, goal, obstacles, instagram and investment have columns.
+const APPLY2_QUESTIONS = [
+  {
+    key: "situation", type: "choice",
+    title: "Which of these best describes your situation right now?",
+    help: "We'll tailor everything to <b>fit your situation</b>.",
+    options: ["I'm already selling and want to scale", "I've been trying dropshipping and I'm stuck", "I'm completely new to dropshipping"]
+  },
+  {
+    key: "goal", type: "text",
+    title: "What's your biggest goal for the next 6–12 months? (life, situation, income)",
+    placeholder: "Type your answer here..."
+  },
+  {
+    key: "obstacles", type: "text",
+    title: "What challenges or obstacles do you feel are holding you back from reaching that goal?",
+    placeholder: "Type your answer here..."
+  },
+  {
+    key: "instagram", type: "text",
+    title: "What's your Instagram?",
+    placeholder: "@handle"
+  },
+  {
+    key: "investment", type: "choice",
+    title: "In a world where this was a PERFECT fit and we knew without a doubt we could help you hit the goals you just mentioned, how much are you willing to invest into building your store and getting 1-on-1 coaching from Ricky?",
+    help: "Full transparency is recommended. We'll help you either way.",
+    options: ["$1,000 – $3,000", "$3,000 – $5,000", "I have a 650+ credit score", "I want to, but don't have the resources to fund my goals"]
+  }
+];
 
 /* ======================================================================= */
 const $ = (s, r = document) => r.querySelector(s);
@@ -871,17 +1044,37 @@ $$(".video[data-video]").forEach(box => {
 $$(".video__play").forEach(btn => btn.addEventListener("click", () => btn.closest(".video").classList.toggle("is-playing")));
 $("#unmute")?.addEventListener("click", e => { e.currentTarget.hidden = true; });
 
-/* ---------- Routing: #optin (default) → #apply → #booked ---------- */
-function route() {
-  const name = (location.hash || "").slice(1);
-  if (name && !["optin", "apply", "booked"].includes(name)) return;   // #privacy etc. leave the page as is
-  const view = name || "optin";
-  $$("[data-view]").forEach(v => { v.hidden = v.dataset.view !== view; });
-  if (view === "apply") prefillApply();
-  toast.active(view === "optin");
-  window.scrollTo(0, 0);
+/* ---------- Pages: / → /apply or /apply-2 (A/B) → /booked ---------- */
+// On Vercel, vercel.json serves this same file at every path; the path picks the page.
+const PAGES = { "/": "optin", "/apply": "apply", "/apply-2": "apply2", "/booked": "booked" };
+const PATHS = { optin: "/", apply: "/apply", apply2: "/apply-2", booked: "/booked" };
+// Old #apply / #booked links → the matching path.
+if (["#apply", "#booked"].includes(location.hash) && location.protocol !== "file:") {
+  location.replace(PATHS[location.hash.slice(1)] + location.search);
 }
-function go(view) { if (location.hash === "#" + view) route(); else location.hash = view; }
+const VIEW = PAGES[location.pathname.replace(/\/index\.html$/, "/").replace(/\.html$/, "").replace(/(.)\/+$/, "$1")] || "optin";
+function go(view) { location.assign(PATHS[view] + location.search); }   // keeps ?utm_… on every page
+
+// A/B version for page 2. Decided once per visitor and remembered.
+function abVersion() {
+  const forced = { "1": "V1", "2": "V2" }[new URLSearchParams(location.search).get("v")];
+  let v = forced;
+  try { v = v || localStorage.getItem("ricky_apply_version"); } catch {}
+  if (v !== "V1" && v !== "V2") v = Math.random() < CONFIG.abSplitV1 ? "V1" : "V2";
+  try { localStorage.setItem("ricky_apply_version", v); } catch {}
+  return v;
+}
+const pageVersion = () => (VIEW === "apply2" ? "V2" : VIEW === "apply" ? "V1" : abVersion());
+
+function route() {
+  $$("[data-view]").forEach(v => { v.hidden = v.dataset.view !== VIEW; });
+  const page = $(`[data-view="${VIEW}"]`);
+  // Only the visible page's clips play, so the other pages' videos never download.
+  $$("video[data-autoplay]", page).forEach(v => { v.preload = "auto"; v.autoplay = true; v.play().catch(() => {}); });
+  if (VIEW === "apply") prefillApply();
+  if (VIEW === "apply2") initTypeform();
+  toast.active(VIEW === "optin");
+}
 
 /* ---------- Lead data (opt-in → application prefill) ---------- */
 let lead = store.get("lead") || {};
@@ -890,7 +1083,7 @@ const qs = new URLSearchParams(location.search);   // UTM-style prefill: ?name=&
 
 function prefillApply() {
   checkApply();
-  initCalendly();   // start loading Calendly behind the blur right away
+  initCalendly($("#cal-embed"));   // start loading Calendly behind the blur right away
 }
 
 /* ---------- Send to the Google Sheet ---------- */
@@ -898,6 +1091,7 @@ function prefillApply() {
 function sendLead(data, type = "optin") {
   if (!CONFIG.leadSheetUrl) return;
   const body = new URLSearchParams({
+    version: pageVersion(),
     ...data,
     type,
     funnel: document.title,
@@ -929,9 +1123,10 @@ $("#optin-form").addEventListener("submit", e => {
   if (bad.length) { err.textContent = "Please add " + bad.join(", ") + "."; err.hidden = false; return; }
   err.hidden = true;
   lead = { name, email, phone: f.cc.value + " " + phone };
-  sendLead({ ...lead, country: f.cc.selectedOptions[0]?.dataset.country || "" });
+  const version = abVersion();
+  sendLead({ ...lead, country: f.cc.selectedOptions[0]?.dataset.country || "", version });
   store.set("lead", lead);
-  go("apply");
+  go(version === "V2" ? "apply2" : "apply");
 });
 $("#back-to-form").addEventListener("click", () => { $("#optin-form").scrollIntoView({ behavior: "smooth", block: "center" }); $("#o-name").focus({ preventScroll: true }); });
 
@@ -1049,8 +1244,97 @@ const investRadios = $$('input[name="investment"]', applyForm);
 investSel.addEventListener("change", () => { investRadios.forEach(r => { r.checked = r.value === investSel.value; }); });
 investRadios.forEach(r => r.addEventListener("change", () => { investSel.value = r.value; investSel.dispatchEvent(new Event("dd:sync")); }));
 
+/* ---------- Page 2, version 2: one question at a time ---------- */
+const tf = $("#tf"), tfForm = $("#tf-form");
+const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+let tfIndex = 0, tfSteps = [], tfAdvanceTimer = null, tfSent = "";
+const typeformData = () => ({ ...lead, ...Object.fromEntries(new FormData(tfForm)) });
+
+function initTypeform() {
+  tfForm.innerHTML = APPLY2_QUESTIONS.map((q, i) => {
+    const id = "tf-" + q.key;
+    const field = q.type === "choice"
+      ? `<div class="tf__opts" role="radiogroup" aria-labelledby="${id}-title">${q.options.map((o, k) =>
+          `<label class="tf__opt"><input type="radio" name="${q.key}" value="${esc(o)}"><span class="tf__key">${String.fromCharCode(65 + k)}</span><span>${esc(o)}</span>${CHECK}</label>`).join("")}</div>`
+      : `<input class="tf__input" id="${id}" name="${q.key}" autocomplete="off" placeholder="${esc(q.placeholder || "")}" aria-labelledby="${id}-title">`;
+    return `<div class="tf__step" data-i="${i}" hidden>
+      <div class="tf__head"><span class="tf__num">${i + 1}${ARROW}</span><h3 class="tf__title" id="${id}-title">${esc(q.title)} <span class="req">*</span></h3></div>
+      <div class="tf__body">
+        ${q.help ? `<p class="tf__help">${q.help}</p>` : ""}
+        ${field}
+        <p class="tf__err" role="alert" hidden></p>
+        <div class="tf__actions"><button type="button" class="tf__ok">OK ${CHECK}</button><span class="tf__hint">press <b>Enter ↵</b></span></div>
+      </div>
+    </div>`;
+  }).join("");
+  tfSteps = $$(".tf__step", tfForm);
+  tfShow(0);
+  initCalendly($("#tf-embed"));   // loads hidden now, so it's ready the moment the last answer is in
+}
+function tfValue(i) {
+  const q = APPLY2_QUESTIONS[i];
+  return q.type === "choice"
+    ? tfForm.querySelector(`input[name="${q.key}"]:checked`)?.value || ""
+    : tfForm.elements[q.key].value.trim();
+}
+function tfShow(i) {
+  clearTimeout(tfAdvanceTimer);
+  tfIndex = i;
+  tfSteps.forEach((st, k) => { st.hidden = k !== i; st.classList.toggle("is-in", k === i); });
+  $("#tf-bar").style.width = (i / APPLY2_QUESTIONS.length) * 100 + "%";
+  $("#tf-prev").disabled = i === 0;
+  const input = tfSteps[i].querySelector(".tf__input");
+  if (input && matchMedia("(hover: hover)").matches) input.focus({ preventScroll: true });
+}
+function tfNext() {
+  const q = APPLY2_QUESTIONS[tfIndex], err = tfSteps[tfIndex].querySelector(".tf__err");
+  if (!tfValue(tfIndex)) {
+    err.textContent = q.type === "choice" ? "Please pick an answer." : "Please fill this in.";
+    err.hidden = false;
+    return;
+  }
+  err.hidden = true;
+  // Save each answer as it's given, so drop-offs show in the sheet (skipped if nothing changed).
+  const data = typeformData(), key = JSON.stringify(data);
+  if (key !== tfSent) { tfSent = key; sendLead(data, "application"); }
+  if (tfIndex < APPLY2_QUESTIONS.length - 1) tfShow(tfIndex + 1);
+  else tfFinish();
+}
+function tfFinish() {
+  $("#tf-bar").style.width = "100%";
+  tf.classList.add("is-done");
+  const cal = $("#tf-cal");
+  cal.classList.remove("is-waiting");
+  cal.inert = false;
+  tf.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+tfForm.addEventListener("submit", e => e.preventDefault());
+tfForm.addEventListener("click", e => { if (e.target.closest(".tf__ok")) tfNext(); });
+tfForm.addEventListener("change", e => {
+  const opt = e.target.closest(".tf__opt");
+  if (!opt) return;
+  opt.classList.remove("is-picked"); void opt.offsetWidth; opt.classList.add("is-picked");
+  tfSteps[tfIndex].querySelector(".tf__err").hidden = true;
+  clearTimeout(tfAdvanceTimer);
+  tfAdvanceTimer = setTimeout(tfNext, 450);   // choices move on by themselves, like Typeform
+});
+tfForm.addEventListener("input", () => { tfSteps[tfIndex].querySelector(".tf__err").hidden = true; });
+$("#tf-prev").addEventListener("click", () => { if (tfIndex > 0) tfShow(tfIndex - 1); });
+$("#tf-next").addEventListener("click", tfNext);
+document.addEventListener("keydown", e => {
+  if (VIEW !== "apply2" || tf.classList.contains("is-done") || e.metaKey || e.ctrlKey || e.altKey) return;
+  const q = APPLY2_QUESTIONS[tfIndex];
+  if (e.key === "Enter" && tf.contains(document.activeElement) && !document.activeElement.matches("button")) { e.preventDefault(); tfNext(); return; }
+  if (e.key === "Enter" && document.activeElement === document.body && tfValue(tfIndex)) { e.preventDefault(); tfNext(); return; }
+  // A, B, C… pick an option when you're not typing somewhere
+  if (q.type === "choice" && /^[a-z]$/i.test(e.key) && !e.target.closest("input:not([type=radio]), textarea")) {
+    const radio = $$(`input[name="${q.key}"]`, tfForm)[e.key.toUpperCase().charCodeAt(0) - 65];
+    if (radio) { radio.checked = true; radio.dispatchEvent(new Event("change", { bubbles: true })); }
+  }
+});
+
 /* ---------- Calendly ---------- */
-let calendlyKey = null;   // the name + email Calendly was last opened with
 // Name and email come from the page 1 opt-in (or ?name=&email= in the link).
 function calendlyPrefill() {
   const name = (lead.name || "").trim().replace(/\s+/g, " ");
@@ -1058,20 +1342,22 @@ function calendlyPrefill() {
   // Send both forms so the name fills in whether the event asks for "Name" or "First / Last name".
   return { name, firstName, lastName: rest.join(" "), email: (lead.email || "").trim() };
 }
-function initCalendly() {
-  if (!window.Calendly) { setTimeout(initCalendly, 300); return; }   // widget.js loads async
+function initCalendly(el) {
+  if (!el) return;
+  if (!window.Calendly) { setTimeout(() => initCalendly(el), 300); return; }   // widget.js loads async
   const prefill = calendlyPrefill();
   const key = prefill.name + "|" + prefill.email;
-  if (key === calendlyKey) return;
-  calendlyKey = key;
-  $("#cal-embed").innerHTML = "";
-  Calendly.initInlineWidget({ url: CONFIG.calendlyUrl, parentElement: $("#cal-embed"), prefill });
+  if (key === el.dataset.calKey) return;
+  el.dataset.calKey = key;
+  el.innerHTML = "";
+  Calendly.initInlineWidget({ url: CONFIG.calendlyUrl, parentElement: el, prefill });
 }
 // Calendly tells the page when a call is booked; then move on to page 3.
 window.addEventListener("message", e => {
   if (e.origin !== "https://calendly.com" || e.data?.event !== "calendly.event_scheduled") return;
-  store.set("booking", { ...applicationData(), bookedAt: Date.now() });
-  sendLead(applicationData(), "booked");
+  const answers = VIEW === "apply2" ? typeformData() : applicationData();
+  store.set("booking", { ...answers, bookedAt: Date.now() });
+  sendLead(answers, "booked");
   setTimeout(() => go("booked"), 1500);
 });
 
@@ -1095,7 +1381,6 @@ const toast = (() => {
   };
 })();
 
-window.addEventListener("hashchange", route);
 route();
 </script>
 </body>
