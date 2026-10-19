@@ -320,16 +320,25 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
 .booker__form { padding: 20px; display: grid; gap: 12px; align-content: start; border-right: 1px solid var(--line); min-width: 0; }
 .booker__form h3 { text-align: left; font-size: 1.1rem; font-weight: 800; }
 .booker__cal { position: relative; min-width: 0; min-height: 700px; }
-.cal-embed { height: 700px; }
-.cal-embed.is-locked { pointer-events: none; }
+.cal-embed { height: 700px; transition: filter .3s ease; }
+.cal-embed.is-locked { filter: blur(7px); pointer-events: none; user-select: none; }
 .cal__lock {
-  position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%);
-  width: min(86%, 260px);
-  background: var(--card); color: var(--card-ink);
-  border: 1px solid var(--line); border-radius: 8px;
-  box-shadow: 0 8px 26px rgba(17, 26, 46, .18);
-  padding: 12px 14px; text-align: center; font-size: .85rem;
+  position: absolute; inset: 0; z-index: 2;
+  display: grid; place-items: center;
+  padding: 20px;
+  background: rgba(255, 255, 255, .35);
 }
+.cal__msg {
+  width: min(100%, 280px);
+  background: var(--card); color: var(--card-ink);
+  border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(17, 26, 46, .2);
+  padding: 16px 18px; text-align: center;
+  display: grid; gap: 6px; justify-items: center;
+}
+.cal__msg svg { width: 26px; height: 26px; color: var(--deep); }
+.cal__msg strong { font-family: var(--display); font-weight: 800; font-size: 1rem; }
+.cal__msg span { font-size: .85rem; color: var(--card-muted); }
 
 /* ---------- Booked ---------- */
 .booking {
@@ -586,9 +595,15 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
         </form>
 
         <div class="booker__cal">
-          <!-- Calendly loads here once the form is filled in (see initCalendly) -->
-          <div class="cal-embed is-locked" id="cal-embed"></div>
-          <div class="cal__lock" id="cal-lock">Please fill out the form before choosing your time slot.</div>
+          <!-- Calendly loads behind the blur as soon as page 2 opens; the blur lifts once the form is filled in -->
+          <div class="cal-embed is-locked" id="cal-embed" inert></div>
+          <div class="cal__lock" id="cal-lock">
+            <p class="cal__msg">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+              <strong>Please fill out the form first</strong>
+              <span>Then pick a time that works for you.</span>
+            </p>
+          </div>
         </div>
       </div>
     </section>
@@ -813,6 +828,7 @@ function prefillApply() {
     if (lead[k] && !el.value) el.value = lead[k];
   });
   checkApply();
+  initCalendly();   // start loading Calendly behind the blur right away
 }
 
 /* ---------- Send opt-ins to the Google Sheet ---------- */
@@ -860,12 +876,13 @@ const applyForm = $("#apply-form");
 function checkApply(reload) {
   const ok = $$("[required]", applyForm).every(el => el.value.trim() && (el.type !== "email" || emailOk(el.value.trim())));
   $("#cal-embed").classList.toggle("is-locked", !ok);
+  $("#cal-embed").inert = !ok;
   $("#cal-lock").hidden = ok;
   $("#st-form").classList.toggle("on", !ok);
   $("#st-book").classList.toggle("on", ok);
-  // Open Calendly the first time the form is complete; refresh it only when a field is finished
-  // (change), so it doesn't reload on every keystroke.
-  if (ok && (reload === true || calendlyKey === null)) initCalendly();
+  // Calendly is already loaded behind the blur. Refresh it only when a field is finished (change)
+  // and the name or email differs from what it was loaded with, so it never reloads per keystroke.
+  if (reload === true) initCalendly();
   return ok;
 }
 applyForm.addEventListener("input", () => checkApply(false));
