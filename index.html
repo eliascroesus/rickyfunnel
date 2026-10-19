@@ -317,31 +317,9 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
 .booker__body { display: grid; grid-template-columns: 1fr 1fr; }
 .booker__form { padding: 20px; display: grid; gap: 12px; align-content: start; border-right: 1px solid var(--line); min-width: 0; }
 .booker__form h3 { text-align: left; font-size: 1.1rem; font-weight: 800; }
-.booker__cal { position: relative; padding: 20px; min-width: 0; }
-
-.cal__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.cal__month { font-weight: 700; }
-.cal__nav { display: flex; gap: 6px; }
-.cal__nav button {
-  width: 32px; height: 32px; border-radius: 50%;
-  border: 1px solid var(--line); background: var(--card); color: var(--card-ink);
-  cursor: pointer; font-size: 1rem; line-height: 1;
-}
-.cal__nav button:disabled { opacity: .35; cursor: not-allowed; }
-.cal__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
-.cal__dow { font-size: .68rem; font-weight: 700; letter-spacing: .06em; color: var(--card-muted); padding-bottom: 6px; }
-.cal__day {
-  aspect-ratio: 1; max-width: 100%;
-  border: 0; border-radius: 50%;
-  font: inherit; font-size: .88rem; font-variant-numeric: tabular-nums;
-  background: transparent; color: #b4bbcc;
-  cursor: default;
-}
-.cal__day.is-open { background: #e7eefc; color: var(--deep); font-weight: 700; cursor: pointer; }
-.cal__day.is-open:hover { background: #d3e0fa; }
-.cal__day.is-picked { background: var(--deep); color: #fff; }
-.cal__day.is-today { box-shadow: inset 0 0 0 1.5px var(--line); }
-.cal.is-locked .cal__grid, .cal.is-locked .cal__head { opacity: .45; filter: grayscale(1); pointer-events: none; }
+.booker__cal { position: relative; min-width: 0; min-height: 700px; }
+.cal-embed { height: 700px; }
+.cal-embed.is-locked { pointer-events: none; }
 .cal__lock {
   position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%);
   width: min(86%, 260px);
@@ -350,17 +328,6 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
   box-shadow: 0 8px 26px rgba(17, 26, 46, .18);
   padding: 12px 14px; text-align: center; font-size: .85rem;
 }
-.slots { display: grid; gap: 8px; margin-top: 14px; }
-.slots__label { font-size: .82rem; font-weight: 700; }
-.slots__tz { font-size: .74rem; color: var(--card-muted); font-weight: 400; }
-.slots__list { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
-.slot {
-  font: inherit; font-size: .88rem; font-weight: 700;
-  padding: 9px 6px; border-radius: 8px;
-  border: 1.5px solid var(--deep); color: var(--deep); background: var(--card);
-  cursor: pointer; font-variant-numeric: tabular-nums;
-}
-.slot.is-picked { background: var(--deep); color: #fff; }
 
 /* ---------- Booked ---------- */
 .booking {
@@ -454,7 +421,6 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
 @media (max-width: 760px) {
   .booker__body { grid-template-columns: 1fr; }
   .booker__form { border-right: 0; border-bottom: 1px solid var(--line); }
-  .cal__day { font-size: .82rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -618,22 +584,9 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
         </form>
 
         <div class="booker__cal">
-          <div class="cal is-locked" id="cal">
-            <div class="cal__head">
-              <span class="cal__month" id="cal-month">October 2026</span>
-              <div class="cal__nav">
-                <button type="button" id="cal-prev" aria-label="Previous month">‹</button>
-                <button type="button" id="cal-next" aria-label="Next month">›</button>
-              </div>
-            </div>
-            <div class="cal__grid" id="cal-grid" role="grid" aria-label="Choose a day"></div>
-            <div class="cal__lock" id="cal-lock">Please fill out the form before choosing your time slot.</div>
-          </div>
-          <div class="slots" id="slots" hidden>
-            <div class="slots__label"><span id="slots-day">Thursday, Oct 22</span> <span class="slots__tz" id="slots-tz"></span></div>
-            <div class="slots__list" id="slots-list"></div>
-            <button class="btn-gold" type="button" id="book-btn" disabled>Confirm Booking</button>
-          </div>
+          <!-- Calendly loads here once the form is filled in (see initCalendly) -->
+          <div class="cal-embed is-locked" id="cal-embed"></div>
+          <div class="cal__lock" id="cal-lock">Please fill out the form before choosing your time slot.</div>
         </div>
       </div>
     </section>
@@ -659,7 +612,7 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
     <div class="booking" id="booking">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
       <div>
-        <strong id="booking-when">Your call: [day] at [time]</strong>
+        <strong id="booking-when">Your call is booked</strong>
         <span id="booking-who"><span data-fill="brand">Ricky</span> Strategy Call · a calendar invite is on its way</span>
       </div>
     </div>
@@ -770,6 +723,7 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
   </div>
 </div>
 
+<script src="https://assets.calendly.com/assets/external/widget.js" async></script>
 <script>
 /* =======================================================================
    EDIT ME — everything you'd normally swap lives here.
@@ -796,9 +750,8 @@ const CONFIG = {
     faqLate: ""
   },
 
-  // Call slots offered on each open weekday (24h "HH:MM", in the visitor's own timezone).
-  slotTimes: ["10:00", "11:30", "13:00", "14:30", "16:00", "18:00"],
-  bookAheadDays: 21,
+  // Calendly booking page shown on page 2. The "hide_*" options strip Calendly's own text.
+  calendlyUrl: "https://calendly.com/eliascroesus/ricky-strategy-call?hide_event_type_details=1&hide_landing_page_details=1&hide_gdpr_banner=1",
 
   // "Just joined" toast. PLACEHOLDER DATA — feed this from real opt-ins (your CRM / Discord bot)
   // before going live; showing made-up sign-ups is deceptive and can break FTC/ad-platform rules.
@@ -842,7 +795,6 @@ function route() {
   const view = name || "optin";
   $$("[data-view]").forEach(v => { v.hidden = v.dataset.view !== view; });
   if (view === "apply") prefillApply();
-  if (view === "booked") showBooking();
   toast.active(view === "optin");
   window.scrollTo(0, 0);
 }
@@ -901,80 +853,38 @@ $("#optin-form").addEventListener("submit", e => {
 });
 $("#back-to-form").addEventListener("click", () => { $("#optin-form").scrollIntoView({ behavior: "smooth", block: "center" }); $("#o-name").focus({ preventScroll: true }); });
 
-/* ---------- Application form gates the calendar ---------- */
+/* ---------- Application form gates the Calendly booking ---------- */
 const applyForm = $("#apply-form");
 function checkApply() {
   const ok = $$("[required]", applyForm).every(el => el.value.trim() && (el.type !== "email" || emailOk(el.value.trim())));
-  $("#cal").classList.toggle("is-locked", !ok);
+  $("#cal-embed").classList.toggle("is-locked", !ok);
   $("#cal-lock").hidden = ok;
   $("#st-form").classList.toggle("on", !ok);
   $("#st-book").classList.toggle("on", ok);
-  if (!ok) { $("#slots").hidden = true; picked = { day: null, time: null }; renderCal(); }
+  if (ok) initCalendly();
   return ok;
 }
 applyForm.addEventListener("input", checkApply);
 applyForm.addEventListener("change", checkApply);
 
-/* ---------- Calendar ---------- */
-const today = new Date(); today.setHours(0, 0, 0, 0);
-const lastDay = new Date(today); lastDay.setDate(lastDay.getDate() + CONFIG.bookAheadDays);
-let viewMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-let picked = { day: null, time: null };
-const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
-$("#slots-tz").textContent = tz ? "(" + tz.replace(/_/g, " ") + ")" : "";
-
-const isOpen = d => d > today && d <= lastDay && d.getDay() !== 0 && d.getDay() !== 6;
-function renderCal() {
-  const grid = $("#cal-grid");
-  $("#cal-month").textContent = viewMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" });
-  $("#cal-prev").disabled = viewMonth <= new Date(today.getFullYear(), today.getMonth(), 1);
-  $("#cal-next").disabled = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1) > lastDay;
-  const cells = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"].map(d => `<div class="cal__dow">${d}</div>`);
-  const first = viewMonth.getDay();
-  for (let i = 0; i < first; i++) cells.push("<div></div>");
-  const days = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0).getDate();
-  for (let n = 1; n <= days; n++) {
-    const d = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), n);
-    const cls = ["cal__day", isOpen(d) && "is-open", +d === +today && "is-today", picked.day && +d === +picked.day && "is-picked"].filter(Boolean).join(" ");
-    cells.push(`<button type="button" class="${cls}" data-ts="${+d}" ${isOpen(d) ? "" : "disabled"} aria-label="${d.toDateString()}">${n}</button>`);
-  }
-  grid.innerHTML = cells.join("");
+/* ---------- Calendly ---------- */
+let calendlyStarted = false;
+function initCalendly() {
+  if (calendlyStarted) return;
+  if (!window.Calendly) { setTimeout(initCalendly, 300); return; }   // widget.js loads async
+  calendlyStarted = true;
+  Calendly.initInlineWidget({
+    url: CONFIG.calendlyUrl,
+    parentElement: $("#cal-embed"),
+    prefill: { name: $("#a-name").value.trim(), email: $("#a-email").value.trim() }
+  });
 }
-$("#cal-grid").addEventListener("click", e => {
-  const b = e.target.closest(".cal__day.is-open"); if (!b) return;
-  picked = { day: new Date(+b.dataset.ts), time: null };
-  renderCal(); renderSlots();
+// Calendly tells the page when a call is booked; then move on to page 3.
+window.addEventListener("message", e => {
+  if (e.origin !== "https://calendly.com" || e.data?.event !== "calendly.event_scheduled") return;
+  store.set("booking", { ...Object.fromEntries(new FormData(applyForm)), bookedAt: Date.now() });
+  setTimeout(() => go("booked"), 1500);
 });
-$("#cal-prev").addEventListener("click", () => { viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1); renderCal(); });
-$("#cal-next").addEventListener("click", () => { viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1); renderCal(); });
-
-const fmtTime = hm => { const [h, m] = hm.split(":").map(Number); return new Date(2000, 0, 1, h, m).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }); };
-const fmtDay = d => d.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
-function renderSlots() {
-  $("#slots").hidden = false;
-  $("#slots-day").textContent = fmtDay(picked.day);
-  $("#slots-list").innerHTML = CONFIG.slotTimes.map(t => `<button type="button" class="slot${picked.time === t ? " is-picked" : ""}" data-t="${t}">${fmtTime(t)}</button>`).join("");
-  const btn = $("#book-btn");
-  btn.disabled = !picked.time;
-  btn.textContent = picked.time ? `Confirm ${fmtDay(picked.day).split(",")[0]} at ${fmtTime(picked.time)}` : "Pick a time";
-}
-$("#slots-list").addEventListener("click", e => {
-  const b = e.target.closest(".slot"); if (!b) return;
-  picked.time = b.dataset.t; renderSlots();
-});
-$("#book-btn").addEventListener("click", () => {
-  if (!checkApply() || !picked.day || !picked.time) return;
-  const data = Object.fromEntries(new FormData(applyForm));
-  store.set("booking", { ...data, day: +picked.day, time: picked.time });
-  // TODO: send `data` + slot to your calendar / CRM here
-  go("booked");
-});
-
-function showBooking() {
-  const b = store.get("booking");
-  if (!b) return;
-  $("#booking-when").textContent = `Your call: ${fmtDay(new Date(b.day))} at ${fmtTime(b.time)}`;
-}
 
 /* ---------- "Just joined" toast ---------- */
 const toast = (() => {
@@ -996,7 +906,6 @@ const toast = (() => {
   };
 })();
 
-renderCal();
 window.addEventListener("hashchange", route);
 route();
 </script>
