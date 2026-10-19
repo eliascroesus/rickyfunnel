@@ -159,8 +159,8 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
 .optin h2 svg { width: 1.1em; height: 1.1em; color: var(--deep); }
 
 .field { display: grid; gap: 4px; }
-.field label { font-size: .82rem; font-weight: 700; color: var(--card-ink); }
-.field label .req { color: var(--danger); }
+.field label, .field__q { font-size: .82rem; font-weight: 700; line-height: 1.5; color: var(--card-ink); }
+.field label .req, .field__q .req { color: var(--danger); }
 .input, .select {
   width: 100%;
   font: inherit; font-size: .95rem;
@@ -175,10 +175,7 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
 .input:focus, .select:focus { outline: none; border-color: var(--deep); box-shadow: 0 0 0 3px rgba(12, 47, 120, .15); }
 .input[aria-invalid="true"] { border-color: var(--danger); }
 /* Radio choices (investment question) */
-.choices { border: 0; margin: 0; padding: 0; min-width: 0; }
-.choices legend { padding: 0; margin-bottom: 6px; font-size: .82rem; font-weight: 700; color: var(--card-ink); }
-.choices legend .req { color: var(--danger); }
-.choices__grid { display: grid; gap: 8px; }
+.choices__grid { display: grid; gap: 8px; margin-top: 2px; }
 .choice {
   position: relative;
   display: flex; align-items: center; gap: 10px;
@@ -651,16 +648,16 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
               <option>$5,000+</option>
             </select>
           </div>
-          <fieldset class="field choices only-wide">
-            <legend>How much have you set aside to invest in yourself and your store? <span class="req">*</span></legend>
-            <div class="choices__grid">
+          <div class="field choices only-wide">
+            <span class="field__q" id="invest-q">How much have you set aside to invest in yourself and your store? <span class="req">*</span></span>
+            <div class="choices__grid" role="radiogroup" aria-labelledby="invest-q">
               <label class="choice"><input type="radio" name="investment" value="Under $500" required><span>Under $500</span></label>
               <label class="choice"><input type="radio" name="investment" value="$500 – $1,500"><span>$500 – $1,500</span></label>
               <label class="choice"><input type="radio" name="investment" value="$1,500 – $3,000"><span>$1,500 – $3,000</span></label>
               <label class="choice"><input type="radio" name="investment" value="$3,000 – $5,000"><span>$3,000 – $5,000</span></label>
               <label class="choice"><input type="radio" name="investment" value="$5,000+"><span>$5,000+</span></label>
             </div>
-          </fieldset>
+          </div>
         </form>
 
         <div class="booker__cal">
@@ -896,11 +893,13 @@ function prefillApply() {
   initCalendly();   // start loading Calendly behind the blur right away
 }
 
-/* ---------- Send opt-ins to the Google Sheet ---------- */
-function sendLead(data) {
+/* ---------- Send to the Google Sheet ---------- */
+// type "optin" adds a row; "application" and "booked" fill in that person's row (matched by email).
+function sendLead(data, type = "optin") {
   if (!CONFIG.leadSheetUrl) return;
   const body = new URLSearchParams({
     ...data,
+    type,
     funnel: document.title,
     page_url: location.href.split("#")[0],
     utm_source: qs.get("utm_source") || "",
@@ -942,6 +941,7 @@ function checkApply() {
   const ok = $$("[required]", applyForm).every(el => el.type === "radio"
     ? !!applyForm.querySelector(`input[name="${el.name}"]:checked`)
     : el.value.trim() && (el.type !== "email" || emailOk(el.value.trim())));
+  if (ok) queueApplication();
   $("#cal-embed").classList.toggle("is-locked", !ok);
   $("#cal-embed").inert = !ok;
   $("#cal-lock").hidden = ok;
@@ -951,6 +951,20 @@ function checkApply() {
 }
 applyForm.addEventListener("input", checkApply);
 applyForm.addEventListener("change", checkApply);
+
+// Send the answers to the sheet once the form is complete (and again if they change),
+// waiting a moment so typing in the Instagram field doesn't send a row per keystroke.
+const applicationData = () => ({ ...lead, ...Object.fromEntries(new FormData(applyForm)) });
+let applicationSent = "", applicationTimer = null;
+function queueApplication() {
+  clearTimeout(applicationTimer);
+  applicationTimer = setTimeout(() => {
+    const data = applicationData(), key = JSON.stringify(data);
+    if (key === applicationSent) return;
+    applicationSent = key;
+    sendLead(data, "application");
+  }, 1500);
+}
 
 /* ---------- Custom dropdowns (open below the field on every browser) ---------- */
 const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
@@ -1056,7 +1070,8 @@ function initCalendly() {
 // Calendly tells the page when a call is booked; then move on to page 3.
 window.addEventListener("message", e => {
   if (e.origin !== "https://calendly.com" || e.data?.event !== "calendly.event_scheduled") return;
-  store.set("booking", { ...lead, ...Object.fromEntries(new FormData(applyForm)), bookedAt: Date.now() });
+  store.set("booking", { ...applicationData(), bookedAt: Date.now() });
+  sendLead(applicationData(), "booked");
   setTimeout(() => go("booked"), 1500);
 });
 

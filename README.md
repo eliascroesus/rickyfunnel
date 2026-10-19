@@ -16,7 +16,9 @@ It's a static site with no build step. On Vercel, import this repo with the defa
 ## Leads to Google Sheets
 
 Every opt-in on page 1 is added as a row to the "Ricky - Master Lead Sheet" spreadsheet through
-the Apps Script in `google-sheets/lead-capture.gs`. Setup steps are at the top of that file. The
+the Apps Script in `google-sheets/lead-capture.gs`. The page 2 answers (Instagram, experience, main
+problem, investment) and the Calendly booking time are then filled into that person's row,
+matched by email. Setup steps are at the top of that file. The
 Web app URL is set in `leadSheetUrl` in the `CONFIG` block near the end of `index.html`.
 
 ## Editing
