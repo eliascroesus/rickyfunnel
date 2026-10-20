@@ -420,7 +420,7 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
 .tf { max-width: 860px; position: relative; overflow: hidden; }
 .tf__progress { height: 4px; background: var(--line); }
 .tf__progress span { display: block; height: 100%; width: 0; background: var(--deep); transition: width .4s ease; }
-.tf__form { min-height: 460px; display: grid; align-content: center; padding: clamp(28px, 5vw, 56px) clamp(20px, 6vw, 64px) 76px; }
+.tf__form { min-height: 460px; display: grid; align-content: center; padding: clamp(28px, 5vw, 56px) clamp(20px, 5vw, 48px) 76px; }
 .tf__step { display: grid; gap: 18px; }
 .tf__step.is-in { animation: tf-in .35s ease both; }
 @keyframes tf-in { from { opacity: 0; transform: translateY(18px); } }
@@ -430,7 +430,14 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
   font: 700 .85rem var(--display); color: var(--deep);
 }
 .tf__num svg { width: 13px; height: 13px; }
-.tf__title { margin: 0; text-align: left; font-family: var(--display); font-weight: 700; font-size: clamp(1.2rem, 2.6vw, 1.6rem); line-height: 1.3; color: var(--card-ink); }
+/* Questions fill the card's width (normal wrapping, not the page's "balance") and scale with the screen;
+   long questions are a step smaller so they don't take over a phone screen. */
+.tf__title {
+  margin: 0; text-align: left; text-wrap: pretty;
+  font-family: var(--body); font-weight: 500; letter-spacing: -.01em;
+  font-size: clamp(1.3rem, .9rem + 1.6vw, 1.75rem); line-height: 1.32; color: var(--card-ink);
+}
+.tf__title--long { font-size: clamp(1.12rem, .85rem + 1.1vw, 1.5rem); }
 .tf__title .req { color: var(--danger); }
 .tf__body { display: grid; gap: 26px; padding-left: 26px; }
 .tf__help { margin: -12px 0 2px; font-size: 1rem; color: var(--card-muted); }
@@ -1263,7 +1270,7 @@ function initTypeform() {
         ? `<textarea class="tf__input" id="${id}" name="${q.key}" rows="1" placeholder="${esc(q.placeholder || "")}" aria-labelledby="${id}-title"></textarea>`
         : `<input class="tf__input" id="${id}" name="${q.key}" autocomplete="off" placeholder="${esc(q.placeholder || "")}" aria-labelledby="${id}-title">`;
     return `<div class="tf__step" data-i="${i}" hidden>
-      <div class="tf__head"><span class="tf__num">${i + 1}${ARROW}</span><h3 class="tf__title" id="${id}-title">${esc(q.title)} <span class="req">*</span></h3></div>
+      <div class="tf__head"><span class="tf__num">${i + 1}${ARROW}</span><h3 class="tf__title${q.title.length > 110 ? " tf__title--long" : ""}" id="${id}-title">${esc(q.title)} <span class="req">*</span></h3></div>
       <div class="tf__body">
         ${q.help ? `<p class="tf__help">${q.help}</p>` : ""}
         ${field}
