@@ -1068,11 +1068,20 @@ if (["#apply", "#booked"].includes(location.hash) && location.protocol !== "file
   location.replace(PATHS[location.hash.slice(1)] + location.search);
 }
 const VIEW = PAGES[location.pathname.replace(/\/index\.html$/, "/").replace(/\.html$/, "").replace(/(.)\/+$/, "$1")] || "optin";
-function go(view) { location.assign(PATHS[view] + location.search); }   // keeps ?utm_… on every page
+// Keeps ?utm_… on every page (but not the ?v= test switch, so a reset only happens once).
+function go(view) {
+  const q = new URLSearchParams(location.search);
+  if (q.get("v") === "reset") q.delete("v");
+  const rest = q.toString();
+  location.assign(PATHS[view] + (rest ? "?" + rest : ""));
+}
 
 // A/B version for page 2. Decided once per visitor and remembered.
+// Testing: ?v=1 or ?v=2 forces a version; ?v=reset forgets it so the next opt-in is a fresh 50/50 draw.
 function abVersion() {
-  const forced = { "1": "V1", "2": "V2" }[new URLSearchParams(location.search).get("v")];
+  const param = new URLSearchParams(location.search).get("v");
+  if (param === "reset") { try { localStorage.removeItem("ricky_apply_version"); } catch {} }
+  const forced = { "1": "V1", "2": "V2" }[param];
   let v = forced;
   try { v = v || localStorage.getItem("ricky_apply_version"); } catch {}
   if (v !== "V1" && v !== "V2") v = Math.random() < CONFIG.abSplitV1 ? "V1" : "V2";
