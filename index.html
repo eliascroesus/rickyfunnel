@@ -89,42 +89,6 @@ a { color: inherit; }
 .wrap--narrow { max-width: 760px; }
 
 
-/* ---------- Page 2: wall of Ricky's results behind the headline + video ---------- */
-/* Small copies in assets/ricky/bg/, laid out by JS (PROOF_WALL). Darkened most in the middle so the
-   headline and video stay readable, and faded out at the bottom into the page's blue. */
-#view-apply, #view-apply2 { position: relative; isolation: isolate; overflow: hidden; }
-.proofwall {
-  position: absolute; z-index: -1; left: 0; right: 0; top: 0;
-  height: clamp(820px, 110vh, 1150px);
-  overflow: hidden; pointer-events: none;
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 50%, transparent 100%);
-          mask-image: linear-gradient(180deg, #000 0%, #000 50%, transparent 100%);
-}
-.proofwall__grid {
-  columns: 6 170px; column-gap: 14px;
-  width: 112%; margin-left: -6%; margin-top: -40px;
-  animation: proofwall-drift 60s linear infinite alternate;
-}
-.proofwall__grid img {
-  display: block; width: 100%; height: auto; margin-bottom: 14px;
-  border-radius: 10px; border: 1px solid rgba(255, 255, 255, .08);
-  filter: saturate(.5) brightness(.6);
-  opacity: .72;   /* lower = more subtle */
-}
-@keyframes proofwall-drift { to { transform: translateY(-60px); } }
-/* Tint + spotlight: dark navy in the middle (where the text and video sit), lighter at the edges. */
-.proofwall::after {
-  content: ""; position: absolute; inset: 0;
-  background:
-    radial-gradient(ellipse 58% 62% at 50% 40%, rgba(4, 6, 12, .88) 0%, rgba(4, 6, 12, .72) 45%, rgba(4, 6, 12, .45) 100%),
-    linear-gradient(180deg, rgba(4, 6, 12, .55) 0%, rgba(4, 6, 12, .15) 35%, rgba(12, 47, 120, .25) 100%);
-}
-@media (max-width: 760px) {
-  .proofwall { height: 760px; }
-  .proofwall__grid { columns: 3 110px; column-gap: 10px; }
-  .proofwall__grid img { margin-bottom: 10px; border-radius: 8px; }
-}
-
 /* ---------- Type ---------- */
 h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-align: center; }
 .headline {
@@ -1072,14 +1036,6 @@ const APPLY2_QUESTIONS = [
   }
 ];
 
-// Background wall behind the page 2 headline + video (small copies of Ricky's results in assets/ricky/bg/).
-const PROOF_WALL = [
-  "sales-4-days", "play-buttons-car", "views-48-hours", "sales-today-payout", "youtube-september-91m",
-  "label-roll", "subscribers-poster", "sales-one-day", "orders-to-ship", "youtube-september-60m",
-  "play-buttons", "shopify-live-poster", "sales-30-days-phone", "play-button-analytics",
-  "youtube-studio-live-poster", "sales-30-days-laptop"
-];
-
 /* ======================================================================= */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -1134,22 +1090,11 @@ function abVersion() {
 }
 const pageVersion = () => (VIEW === "apply2" ? "V2" : VIEW === "apply" ? "V1" : abVersion());
 
-function buildProofWall(page) {
-  const wall = document.createElement("div");
-  wall.className = "proofwall";
-  wall.setAttribute("aria-hidden", "true");
-  // The list twice (second time in a different order) so every column is filled to the bottom.
-  const order = [...PROOF_WALL, ...PROOF_WALL.slice(7), ...PROOF_WALL.slice(0, 7)];
-  wall.innerHTML = `<div class="proofwall__grid">${order.map(n => `<img src="/assets/ricky/bg/${n}.webp" alt="" decoding="async">`).join("")}</div>`;
-  page.prepend(wall);
-}
-
 function route() {
   $$("[data-view]").forEach(v => { v.hidden = v.dataset.view !== VIEW; });
   const page = $(`[data-view="${VIEW}"]`);
   // Only the visible page's clips play, so the other pages' videos never download.
   $$("video[data-autoplay]", page).forEach(v => { v.preload = "auto"; v.autoplay = true; v.play().catch(() => {}); });
-  if (VIEW === "apply" || VIEW === "apply2") buildProofWall(page);
   if (VIEW === "apply") prefillApply();
   if (VIEW === "apply2") initTypeform();
   toast.active(VIEW === "optin");
