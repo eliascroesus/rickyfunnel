@@ -493,7 +493,14 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
 .tf__nav button:disabled { opacity: .35; cursor: default; }
 .tf__nav svg { width: 18px; height: 18px; }
 .tf__cal { position: relative; }
-.tf__cal .cal-embed { height: 700px; }
+.tf__cal .cal-embed { height: 720px; overflow: hidden; }
+/* Calendly draws ~66px of empty space above its card inside its own frame on desktop. Pull the frame
+   up behind our card's edge so the booking starts right under our header. Tune --cal-crop-top if
+   Calendly ever changes that gap. Phones use Calendly's edge-to-edge layout, so no crop there. */
+@media (min-width: 761px) {
+  .tf__cal .cal-embed { --cal-crop-top: 66px; }
+  .tf__cal .cal-embed iframe { display: block; margin-top: calc(-1 * var(--cal-crop-top)); height: calc(100% + var(--cal-crop-top)) !important; }
+}
 .tf__cal.is-waiting { position: absolute; left: 0; right: 0; top: 4px; visibility: hidden; pointer-events: none; }
 .tf__calhead {
   display: flex; align-items: center; justify-content: center; gap: 8px;
