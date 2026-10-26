@@ -3,6 +3,7 @@
   "rewrites": [
     { "source": "/apply", "destination": "/index.html" },
     { "source": "/apply-2", "destination": "/index.html" },
-    { "source": "/booked", "destination": "/index.html" }
+    { "source": "/booked", "destination": "/index.html" },
+    { "source": "/not-qualified", "destination": "/index.html" }
   ]
 }

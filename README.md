@@ -10,8 +10,11 @@ YouTube Shorts dropshipping funnel. All pages live in one file, `index.html`; th
      `APPLY2_QUESTIONS`). Calendly loads in the background and appears after the last answer.
    - Add `?v=1` or `?v=2` to a link to see a specific version.
 3. **Booked** (`/booked`): next-steps video, FAQ videos and more results.
+4. **Not qualified** (`/not-qualified`): where applicants land instead of the calendar when their investment
+   answer is in `CONFIG.disqualify` ("Under $500" on V1, "don't have the resources" on V2). Their answers still
+   go to the sheet. Put the Discord invite in `CONFIG.discordUrl` to show a "Join The Free Discord" button.
 
-`vercel.json` serves `index.html` at `/apply`, `/apply-2` and `/booked`. Images and clips live in `assets/ricky/`.
+`vercel.json` serves `index.html` at `/apply`, `/apply-2`, `/booked` and `/not-qualified`. Images and clips live in `assets/ricky/`.
 
 ## Hosting
 

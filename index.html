@@ -7,11 +7,14 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://assets.calendly.com">
+<link rel="preconnect" href="https://calendly.com">
+<script src="https://assets.calendly.com/assets/external/widget.js" async></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,600;0,700;0,800;1,700;1,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap">
 <script>
   // Pick the page from the URL before anything draws, so /apply never flashes page 1.
   (function () {
-    var pages = { "/apply": "apply", "/apply-2": "apply2", "/booked": "booked" };
+    var pages = { "/apply": "apply", "/apply-2": "apply2", "/booked": "booked", "/not-qualified": "notqualified" };
     var path = location.pathname.replace(/\/index\.html$/, "/").replace(/\.html$/, "").replace(/(.)\/+$/, "$1");
     document.documentElement.setAttribute("data-page", pages[path] || "optin");
   })();
@@ -20,7 +23,8 @@
 html:not([data-page="optin"]) #view-optin,
 html:not([data-page="apply"]) #view-apply,
 html:not([data-page="apply2"]) #view-apply2,
-html:not([data-page="booked"]) #view-booked { display: none; }
+html:not([data-page="booked"]) #view-booked,
+html:not([data-page="notqualified"]) #view-notqualified { display: none; }
 /* Layout: three funnel steps in one file (opt-in → VSL + application → booked), each a
    black-to-midnight-blue band with a centred column, white cards for forms, gold for the one action. */
 :root {
@@ -37,7 +41,9 @@ html:not([data-page="booked"]) #view-booked { display: none; }
   --card-ink: #111a2e;
   --card-muted: #66708a;
   --line: #dfe4ee;
-  --field: #f6f8fc;
+  --field: #eef0f3;         /* empty input box: neutral grey */
+  --field-line: #d3d7dd;
+  --field-done: #ffffff;    /* once it's filled in or picked */
   --danger: #d93a3a;
   --dc-bg: #2b2d31;        /* Discord message card */
   --dc-fg: #dbdee1;
@@ -46,6 +52,8 @@ html:not([data-page="booked"]) #view-booked { display: none; }
   --dc-feed: #1e1f22;      /* Discord channel background */
   --ph: #16213d;           /* video placeholder fill */
   --ph-line: rgba(95, 180, 255, .12);
+
+  --form-text: 1rem;       /* every question, answer and dropdown option in the forms */
 
   --display: "Montserrat", "Arial Black", "Helvetica Neue", Arial, sans-serif;
   --body: "DM Sans", "Helvetica Neue", Arial, sans-serif;
@@ -90,7 +98,8 @@ a { color: inherit; }
 
 
 /* ---------- Type ---------- */
-h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-align: center; }
+/* position: relative draws headings above the shadow of the video or card just before them. */
+h1, h2, h3 { position: relative; font-family: var(--display); margin: 0; text-wrap: balance; text-align: center; }
 .headline {
   font-size: clamp(1.7rem, 4.4vw, 2.6rem);
   font-weight: 800;
@@ -103,22 +112,22 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
   font-weight: 800;
   line-height: 1.25;
 }
-.sub--big { font-size: clamp(1.5rem, 4.2vw, 2.3rem); line-height: 1.2; max-width: 32ch; }
-@media (min-width: 420px) { .sub--big .hl { white-space: nowrap; } }
-.br-wide { display: none; }
-/* Wide screens: exactly two lines, with the font scaled so the longer line
-   ("Views That Don't Sell & Products That Die?", about 23em wide) fits the column. */
-@media (min-width: 760px) {
-  .br-wide { display: inline; }
-  .sub--big { max-width: none; white-space: nowrap; font-size: min(2.3rem, calc((min(100vw, 880px) - 56px) / 23)); }
-}
+/* Wide screens: headings marked data-fit stay on one line; fitHeadings() shrinks the font until they fit. */
+@media (min-width: 761px) { [data-fit] { max-width: none; white-space: nowrap; } }
+/* Phones: fill each line to the full column width instead of evening the lines out (balance). */
+@media (max-width: 760px) { [data-fit] { text-wrap: wrap; } }
 .step {
+  color: #fff;
   font-size: clamp(1.1rem, 2.8vw, 1.6rem);
   font-weight: 800;
   font-style: italic;
   line-height: 1.25;
 }
 .step b { color: var(--accent); font-weight: 800; }
+/* Page 2: the three lines above the video are always the same size. On wide screens they share
+   data-fit="intro", so when the longest one has to shrink to fit, the others shrink with it. */
+.intro { font-size: clamp(1.1rem, 2.6vw, 1.45rem); }
+.nowrap { white-space: nowrap; }
 .warn {
   display: inline-flex; align-items: center; gap: 10px;
   font-size: clamp(1.05rem, 2.6vw, 1.5rem);
@@ -171,59 +180,38 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
 .optin h2 svg { width: 1.1em; height: 1.1em; color: var(--deep); }
 
 .field { display: grid; gap: 4px; }
-.field label, .field__q { font-size: .82rem; font-weight: 700; line-height: 1.5; color: var(--card-ink); }
-.field label .req, .field__q .req { color: var(--danger); }
+.field label { font-size: var(--form-text); font-weight: 700; line-height: 1.5; color: var(--card-ink); }
+.field label .req { color: var(--danger); }
 .input, .select {
   width: 100%;
-  font: inherit; font-size: .95rem;
+  font: inherit; font-size: var(--form-text);
   color: var(--card-ink);
   background: var(--field);
-  border: 1px solid var(--line);
+  border: 1px solid var(--field-line);
   border-radius: 10px;
   padding: 12px 14px;
   min-height: 46px;
+  transition: background-color .15s ease, border-color .15s ease;
 }
-.input::placeholder { color: #9aa3b8; }
+.input::placeholder { color: #8a9099; }
+.input:focus, .input:not(:placeholder-shown) { background: var(--field-done); }
 .input:focus, .select:focus { outline: none; border-color: var(--deep); box-shadow: 0 0 0 3px rgba(12, 47, 120, .15); }
 .input[aria-invalid="true"] { border-color: var(--danger); }
-/* Radio choices (investment question) */
-.choices__grid { display: grid; gap: 8px; margin-top: 2px; }
-.choice {
-  position: relative;
-  display: flex; align-items: center; gap: 10px;
-  min-height: 46px; padding: 10px 12px;
-  background: var(--field); border: 1px solid var(--line); border-radius: 10px;
-  font-size: .93rem; font-weight: 500; color: var(--card-ink); cursor: pointer;
-  transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
-}
-.field .choice { font-size: .93rem; font-weight: 500; color: var(--card-ink); }   /* beat ".field label" */
-.choice:hover { border-color: #c4cde0; }
-.choice input {
-  appearance: none; -webkit-appearance: none; margin: 0; flex: none;
-  width: 18px; height: 18px; border-radius: 50%;
-  border: 2px solid #b8c1d6; background: var(--card);
-  display: grid; place-items: center; cursor: pointer;
-}
-.choice input::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--deep); transform: scale(0); transition: transform .15s ease; }
-.choice input:checked { border-color: var(--deep); }
-.choice input:checked::after { transform: scale(1); }
-.field .choice:has(input:checked) { border-color: var(--deep); background: #eef3fd; font-weight: 700; color: var(--deep); }
-.choice:has(input:focus-visible) { box-shadow: 0 0 0 3px rgba(12, 47, 120, .2); }
-
 /* Custom dropdown: the real <select> stays in the form (hidden) and holds the value. */
 .dd { position: relative; }
 .dd select { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
 .dd__btn {
   width: 100%; min-height: 46px;
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  font: inherit; font-size: .95rem; text-align: left;
-  color: var(--card-ink); background: var(--field);
-  border: 1px solid var(--line); border-radius: 10px;
+  font: inherit; font-size: var(--form-text); text-align: left;
+  color: var(--card-ink); background: var(--field-done);
+  border: 1px solid var(--field-line); border-radius: 10px;
   padding: 11px 14px; cursor: pointer;
-  transition: border-color .15s ease, box-shadow .15s ease;
+  transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
-.dd__btn:hover { border-color: #c4cde0; }
-.dd__btn.is-empty .dd__value { color: #9aa3b8; }
+.dd__btn.is-empty { background: var(--field); }
+.dd__btn:hover { border-color: #b9bec6; }
+.dd__btn.is-empty .dd__value { color: #8a9099; }
 .dd__btn:focus-visible, .dd.is-open .dd__btn { outline: none; border-color: var(--deep); box-shadow: 0 0 0 3px rgba(12, 47, 120, .15); }
 .dd__chev { flex: none; width: 18px; height: 18px; color: var(--card-muted); transition: transform .2s ease; }
 .dd.is-open .dd__chev { transform: rotate(180deg); }
@@ -234,10 +222,11 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
   box-shadow: 0 16px 40px rgba(17, 26, 46, .18);
   max-height: 280px; overflow-y: auto;
 }
+.dd.is-up .dd__list { top: auto; bottom: calc(100% + 6px); }   /* not enough room below inside the card */
 .dd__opt {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
   padding: 10px 12px; border-radius: 8px;
-  font-size: .93rem; color: var(--card-ink); cursor: pointer;
+  font-size: var(--form-text); color: var(--card-ink); cursor: pointer;
 }
 .dd__opt.is-active { background: #eef3fd; }
 .dd__opt[aria-selected="true"] { color: var(--deep); font-weight: 700; }
@@ -320,6 +309,17 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
 .receipt img, .receipt video { display: block; width: 100%; max-width: 100%; height: auto; }
 .receipt figcaption { padding: 10px 14px; font-family: var(--display); font-weight: 700; font-size: .95rem; }
 .receipt figcaption b { color: var(--accent); font-weight: 800; }
+/* Results images open bigger when tapped (see #zoom). */
+.receipt__zoom { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
+.zoom { padding: 0; border: 0; background: none; max-width: 96vw; max-height: 92vh; overflow: visible; }
+.zoom::backdrop { background: rgba(0, 0, 0, .86); }
+.zoom img { display: block; width: auto; height: auto; max-width: 96vw; max-height: 92vh; border-radius: 10px; cursor: zoom-out; }
+.zoom__close {
+  position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); right: calc(12px + env(safe-area-inset-right, 0px));
+  width: 40px; height: 40px; display: grid; place-items: center;
+  border: 0; border-radius: 50%; background: rgba(255, 255, 255, .16); color: #fff; cursor: pointer;
+}
+.zoom__close svg { width: 18px; height: 18px; }
 
 /* ---------- Video placeholder ---------- */
 .video {
@@ -393,7 +393,8 @@ h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; text-al
 .booker__steps .on { color: var(--card-ink); font-weight: 700; }
 .booker__steps .on i { background: var(--card-ink); }
 .booker__body { display: grid; grid-template-columns: 1fr 1fr; }
-.booker__form { padding: 20px; display: grid; gap: 12px; align-content: start; border-right: 1px solid var(--line); min-width: 0; }
+.booker__form { padding: 20px; display: grid; gap: 14px; align-content: start; border-right: 1px solid var(--line); min-width: 0; }
+.booker__form { --form-text: .875rem; }   /* application form (V1): one smaller size for all of its text */
 .booker__form h3 { text-align: left; font-size: 1.1rem; font-weight: 800; }
 .booker__cal { position: relative; min-width: 0; min-height: 700px; }
 .cal-embed { height: 700px; transition: filter .3s ease; }
@@ -501,7 +502,9 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
   .tf__cal .cal-embed { --cal-crop-top: 66px; }
   .tf__cal .cal-embed iframe { display: block; margin-top: calc(-1 * var(--cal-crop-top)); height: calc(100% + var(--cal-crop-top)) !important; }
 }
-.tf__cal.is-waiting { position: absolute; left: 0; right: 0; top: 4px; visibility: hidden; pointer-events: none; }
+/* While the questions are on screen, Calendly sits behind them fully see-through. Not visibility: hidden:
+   browsers pause drawing inside hidden frames, so it would only finish loading once shown. */
+.tf__cal.is-waiting { position: absolute; left: 0; right: 0; top: 4px; opacity: 0; pointer-events: none; }
 .tf__calhead {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   margin: 0; padding: 14px 16px; border-bottom: 1px solid var(--line);
@@ -575,6 +578,12 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
 }
 .daysplit::before, .daysplit::after { content: ""; flex: 1; height: 1px; background: rgba(255, 255, 255, .1); }
 
+/* ---------- Not qualified ---------- */
+.nq { margin: 0; max-width: 34ch; text-align: center; text-wrap: balance; font-size: clamp(1.05rem, 2.6vw, 1.3rem); line-height: 1.5; }
+.nq b { color: var(--accent); }
+.nq__btn { display: block; max-width: 420px; text-align: center; text-decoration: none; }
+.nq__note { margin: 0; color: var(--muted); text-align: center; }
+
 /* ---------- Footer ---------- */
 .foot { max-width: 720px; text-align: center; color: var(--muted); font-size: .72rem; line-height: 1.6; }
 .foot nav { display: flex; justify-content: center; gap: 14px; margin-bottom: 8px; font-size: .78rem; }
@@ -601,9 +610,7 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
 .toast small { color: var(--muted); }
 .tick { color: #4ade80; font-weight: 700; }
 
-@media (min-width: 761px) { .only-stacked { display: none; } }
 @media (max-width: 760px) {
-  .only-wide { display: none; }
   .booker__body { grid-template-columns: 1fr; }
   .booker__form { border-right: 0; border-bottom: 1px solid var(--line); }
 }
@@ -694,9 +701,9 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
 <main class="view" id="view-apply" data-view="apply" hidden>
   <div class="wrap">
 
-    <h1 class="sub">Check Your <span class="hl">Email</span> + <span class="hl">SMS</span> For Discord Access…</h1>
-    <h2 class="sub sub--big">Do You Want To <span class="hl">Break Free</span> From<br class="br-wide"> <span class="hl">Views That Don't&nbsp;Sell</span> &amp; <span class="hl">Products That Die?</span></h2>
-    <h2 class="step"><b>Step #1</b> Watch This Video To See How I Went From <b>$16/hr</b> To <b>$10K In 3 Days</b>.</h2>
+    <h1 class="sub intro" data-fit="intro">Check Your <span class="hl">Email</span> + <span class="hl">SMS</span> For Discord&nbsp;Access…</h1>
+    <h2 class="sub intro" data-fit="intro">Do You Want To <span class="hl">Break&nbsp;Free</span> From <span class="hl">Views That Don't&nbsp;Sell</span> &amp; <span class="hl">Products That&nbsp;Die?</span></h2>
+    <h2 class="step intro" data-fit="intro"><b>Step #1</b> Watch This Video To See How I Went From <b>$16/hr</b> To <b>$10K In 3&nbsp;Days</b>.</h2>
 
     <div class="video" data-video="vsl">
       <div class="video__ph">
@@ -708,7 +715,7 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
       <div class="video__bar"><span></span></div>
     </div>
 
-    <h2 class="step"><b>Step #2</b> Fill Out This Application To Apply For The 1-1 <span data-fill="program">YouTube Shorts Dropshipping</span> Mentorship</h2>
+    <h2 class="step" data-fit><b>Step #2</b> Fill Out This Application To Apply For The <span class="nowrap">1-1</span> <span data-fill="program">YouTube Shorts Dropshipping</span> Mentorship</h2>
 
     <section class="card booker" aria-label="Strategy call application">
       <div class="booker__steps">
@@ -719,11 +726,7 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
         <form class="booker__form" id="apply-form" novalidate>
           <h3><span data-fill="brand">Ricky</span> Strategy Call</h3>
           <div class="field">
-            <label for="a-ig">What's your Instagram? <span class="req">*</span></label>
-            <input class="input" id="a-ig" name="instagram" autocomplete="off" placeholder="@handle" required>
-          </div>
-          <div class="field">
-            <label for="a-exp">Where Are You At With Dropshipping? <span class="req">*</span></label>
+            <label for="a-exp">Where Are You At With Dropshipping?&nbsp;<span class="req">*</span></label>
             <select class="select" data-dropdown id="a-exp" name="experience" required>
               <option value="">Select</option>
               <option>Brand new, haven't started yet</option>
@@ -733,7 +736,7 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
             </select>
           </div>
           <div class="field">
-            <label for="a-reason">What's The Main Thing Stopping You Right Now? <span class="req">*</span></label>
+            <label for="a-reason">What's The Main Thing Stopping You Right Now?&nbsp;<span class="req">*</span></label>
             <select class="select" data-dropdown id="a-reason" name="reason" required>
               <option value="">Select</option>
               <option>I can't find a product that sells</option>
@@ -743,11 +746,9 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
               <option>I don't have much time with my job</option>
             </select>
           </div>
-          <!-- Investment: radio buttons when the calendar sits beside the form, a dropdown when it stacks.
-               Both stay in sync; the radios carry the form value. -->
-          <div class="field only-stacked">
-            <label for="a-invest">How much have you set aside to invest in yourself and your store? <span class="req">*</span></label>
-            <select class="select" data-dropdown id="a-invest">
+          <div class="field">
+            <label for="a-invest">How much have you set aside to invest in yourself and your store?&nbsp;<span class="req">*</span></label>
+            <select class="select" data-dropdown id="a-invest" name="investment" required>
               <option value="">Select</option>
               <option>Under $500</option>
               <option>$500 – $1,500</option>
@@ -756,15 +757,9 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
               <option>$5,000+</option>
             </select>
           </div>
-          <div class="field choices only-wide">
-            <span class="field__q" id="invest-q">How much have you set aside to invest in yourself and your store? <span class="req">*</span></span>
-            <div class="choices__grid" role="radiogroup" aria-labelledby="invest-q">
-              <label class="choice"><input type="radio" name="investment" value="Under $500" required><span>Under $500</span></label>
-              <label class="choice"><input type="radio" name="investment" value="$500 – $1,500"><span>$500 – $1,500</span></label>
-              <label class="choice"><input type="radio" name="investment" value="$1,500 – $3,000"><span>$1,500 – $3,000</span></label>
-              <label class="choice"><input type="radio" name="investment" value="$3,000 – $5,000"><span>$3,000 – $5,000</span></label>
-              <label class="choice"><input type="radio" name="investment" value="$5,000+"><span>$5,000+</span></label>
-            </div>
+          <div class="field">
+            <label for="a-ig">What's your Instagram?&nbsp;<span class="req">*</span></label>
+            <input class="input" id="a-ig" name="instagram" autocomplete="off" placeholder="@handle" required>
           </div>
         </form>
 
@@ -796,9 +791,9 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
 <main class="view" id="view-apply2" data-view="apply2" hidden>
   <div class="wrap">
 
-    <h1 class="sub">Check Your <span class="hl">Email</span> + <span class="hl">SMS</span> For Discord Access…</h1>
-    <h2 class="sub sub--big">Do You Want To <span class="hl">Break Free</span> From<br class="br-wide"> <span class="hl">Views That Don't&nbsp;Sell</span> &amp; <span class="hl">Products That Die?</span></h2>
-    <h2 class="step"><b>Step #1</b> Watch This Video To See How I Went From <b>$16/hr</b> To <b>$10K In 3 Days</b>.</h2>
+    <h1 class="sub intro" data-fit="intro">Check Your <span class="hl">Email</span> + <span class="hl">SMS</span> For Discord&nbsp;Access…</h1>
+    <h2 class="sub intro" data-fit="intro">Do You Want To <span class="hl">Break&nbsp;Free</span> From <span class="hl">Views That Don't&nbsp;Sell</span> &amp; <span class="hl">Products That&nbsp;Die?</span></h2>
+    <h2 class="step intro" data-fit="intro"><b>Step #1</b> Watch This Video To See How I Went From <b>$16/hr</b> To <b>$10K In 3&nbsp;Days</b>.</h2>
 
     <div class="video" data-video="vsl">
       <div class="video__ph">
@@ -810,7 +805,7 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
       <div class="video__bar"><span></span></div>
     </div>
 
-    <h2 class="step"><b>Step #2</b> Fill Out This Application To Apply For The 1-1 <span data-fill="program">YouTube Shorts Dropshipping</span> Mentorship</h2>
+    <h2 class="step" data-fit><b>Step #2</b> Fill Out This Application To Apply For The <span class="nowrap">1-1</span> <span data-fill="program">YouTube Shorts Dropshipping</span> Mentorship</h2>
 
     <section class="card tf" id="tf" aria-label="Strategy call application">
       <div class="tf__progress" aria-hidden="true"><span id="tf-bar"></span></div>
@@ -819,12 +814,31 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
         <button type="button" id="tf-prev" aria-label="Previous question"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
         <button type="button" id="tf-next" aria-label="Next question"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
       </div>
-      <!-- Calendly loads here (hidden) as soon as the page opens, and shows once the last answer is in -->
+      <!-- Calendly loads here (see-through, behind the questions) as soon as the page opens, and shows once the last answer is in -->
       <div class="tf__cal is-waiting" id="tf-cal" inert>
         <p class="tf__calhead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg> Application done. Last step: pick a time for your call.</p>
         <div class="cal-embed" id="tf-embed"></div>
       </div>
     </section>
+
+    <footer class="foot">
+      <nav><a href="#privacy">Privacy Policy</a><a href="#terms">Terms of Service</a><a href="#disclaimer">Disclaimer</a></nav>
+      Results vary and are not typical. Most people who try dropshipping don't make money.
+    </footer>
+  </div>
+</main>
+
+<!-- =====================================================================
+     NOT QUALIFIED  (/not-qualified)
+     Applicants whose investment answer is in CONFIG.disqualify land here instead of booking a call.
+     ===================================================================== -->
+<main class="view" id="view-notqualified" data-view="notqualified" hidden>
+  <div class="wrap wrap--narrow">
+
+    <h1 class="headline">Unfortunately, You <span class="hl">Don’t Qualify</span> For The <span class="nowrap">1-1</span> <span data-fill="program">YouTube Shorts Dropshipping</span> Mentorship Right&nbsp;Now</h1>
+    <p class="nq">But don’t worry: join the free Discord and <b>I’ll teach you there every week.</b></p>
+    <a class="btn-gold nq__btn" id="nq-discord" href="#" hidden>Join The Free Discord</a>
+    <p class="nq__note" id="nq-check">Your Discord invite is in your email + SMS.</p>
 
     <footer class="foot">
       <nav><a href="#privacy">Privacy Policy</a><a href="#terms">Terms of Service</a><a href="#disclaimer">Disclaimer</a></nav>
@@ -949,6 +963,12 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
   </div>
 </main>
 
+<!-- Enlarged results image: opens when a results image is tapped; tap anywhere or press Esc to close -->
+<dialog class="zoom" id="zoom">
+  <img alt="">
+  <button type="button" class="zoom__close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+</dialog>
+
 <!-- Live "just joined" toast (opt-in page only) -->
 <div class="toast is-out" id="toast" role="status" aria-live="polite">
   <span class="avatar" id="toast-av">E</span>
@@ -958,7 +978,6 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
   </div>
 </div>
 
-<script src="https://assets.calendly.com/assets/external/widget.js" async></script>
 <script>
 /* =======================================================================
    EDIT ME — everything you'd normally swap lives here.
@@ -988,6 +1007,13 @@ const CONFIG = {
   // A/B test for page 2: share of new opt-ins sent to /apply (V1). The rest go to /apply-2 (V2).
   // Each visitor keeps the version they got. Add ?v=1 or ?v=2 to a link to force one for testing.
   abSplitV1: 0.5,
+
+  // Investment answers that don't qualify for a call (V1 and V2 wording). These applicants are sent to
+  // /not-qualified instead of the calendar; their answers still go to the sheet.
+  disqualify: ["Under $500", "I want to, but don't have the resources to fund my goals"],
+
+  // Discord invite link for the button on /not-qualified. Leave "" to tell them to check their email + SMS.
+  discordUrl: "",
 
   // Calendly booking page shown on page 2. The "hide_*" options strip Calendly's own text.
   calendlyUrl: "https://calendly.com/eliascroesus/ricky-strategy-call?hide_event_type_details=1&hide_landing_page_details=1&hide_gdpr_banner=1",
@@ -1061,8 +1087,8 @@ $("#unmute")?.addEventListener("click", e => { e.currentTarget.hidden = true; })
 
 /* ---------- Pages: / → /apply or /apply-2 (A/B) → /booked ---------- */
 // On Vercel, vercel.json serves this same file at every path; the path picks the page.
-const PAGES = { "/": "optin", "/apply": "apply", "/apply-2": "apply2", "/booked": "booked" };
-const PATHS = { optin: "/", apply: "/apply", apply2: "/apply-2", booked: "/booked" };
+const PAGES = { "/": "optin", "/apply": "apply", "/apply-2": "apply2", "/booked": "booked", "/not-qualified": "notqualified" };
+const PATHS = { optin: "/", apply: "/apply", apply2: "/apply-2", booked: "/booked", notqualified: "/not-qualified" };
 // Old #apply / #booked links → the matching path.
 if (["#apply", "#booked"].includes(location.hash) && location.protocol !== "file:") {
   location.replace(PATHS[location.hash.slice(1)] + location.search);
@@ -1095,10 +1121,38 @@ function route() {
   const page = $(`[data-view="${VIEW}"]`);
   // Only the visible page's clips play, so the other pages' videos never download.
   $$("video[data-autoplay]", page).forEach(v => { v.preload = "auto"; v.autoplay = true; v.play().catch(() => {}); });
+  fitHeadings();
   if (VIEW === "apply") prefillApply();
   if (VIEW === "apply2") initTypeform();
   toast.active(VIEW === "optin");
 }
+
+/* ---------- One-line headings ---------- */
+// From 761px wide, headings marked data-fit stay on one line and shrink just enough to fit the column.
+// Headings with the same data-fit name all take the smallest of their sizes. Phones wrap them as usual.
+const fitWide = matchMedia("(min-width: 761px)");
+function fitHeadings() {
+  const groups = {};
+  $$("[data-fit]").forEach(el => {
+    el.style.fontSize = "";
+    if (!fitWide.matches || !el.offsetParent) return;
+    const cs = getComputedStyle(el.parentElement);
+    const room = el.parentElement.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    let size = parseFloat(getComputedStyle(el).fontSize);
+    if (el.scrollWidth > room) {
+      size = Math.floor(size * room / el.scrollWidth * 10) / 10;   // text width scales with font size
+      el.style.fontSize = size + "px";
+      while (el.scrollWidth > room && size > 12) el.style.fontSize = (size -= .5) + "px";
+    }
+    if (el.dataset.fit) (groups[el.dataset.fit] ||= []).push([el, size]);
+  });
+  Object.values(groups).forEach(list => {
+    const size = Math.min(...list.map(([, s]) => s));
+    list.forEach(([el]) => { el.style.fontSize = size + "px"; });
+  });
+}
+window.addEventListener("resize", fitHeadings);
+document.fonts?.ready.then(fitHeadings);   // web fonts are wider than the fallback
 
 /* ---------- Lead data (opt-in → application prefill) ---------- */
 let lead = store.get("lead") || {};
@@ -1160,13 +1214,15 @@ function checkApply() {
   const ok = $$("[required]", applyForm).every(el => el.type === "radio"
     ? !!applyForm.querySelector(`input[name="${el.name}"]:checked`)
     : el.value.trim() && (el.type !== "email" || emailOk(el.value.trim())));
-  if (ok) queueApplication();
-  $("#cal-embed").classList.toggle("is-locked", !ok);
-  $("#cal-embed").inert = !ok;
-  $("#cal-lock").hidden = ok;
-  $("#st-form").classList.toggle("on", !ok);
-  $("#st-book").classList.toggle("on", ok);
-  return ok;
+  const out = ok && CONFIG.disqualify.includes(applyForm.elements.investment.value);
+  if (ok) queueApplication(out); else clearTimeout(applicationTimer);
+  const open = ok && !out;
+  $("#cal-embed").classList.toggle("is-locked", !open);
+  $("#cal-embed").inert = !open;
+  $("#cal-lock").hidden = open;
+  $("#st-form").classList.toggle("on", !open);
+  $("#st-book").classList.toggle("on", open);
+  return open;
 }
 applyForm.addEventListener("input", checkApply);
 applyForm.addEventListener("change", checkApply);
@@ -1175,13 +1231,13 @@ applyForm.addEventListener("change", checkApply);
 // waiting a moment so typing in the Instagram field doesn't send a row per keystroke.
 const applicationData = () => ({ ...lead, ...Object.fromEntries(new FormData(applyForm)) });
 let applicationSent = "", applicationTimer = null;
-function queueApplication() {
+// A disqualifying investment answer sends them to /not-qualified once the answers are saved.
+function queueApplication(disqualified) {
   clearTimeout(applicationTimer);
   applicationTimer = setTimeout(() => {
     const data = applicationData(), key = JSON.stringify(data);
-    if (key === applicationSent) return;
-    applicationSent = key;
-    sendLead(data, "application");
+    if (key !== applicationSent) { applicationSent = key; sendLead(data, "application"); }
+    if (disqualified) go("notqualified");
   }, 1500);
 }
 
@@ -1233,11 +1289,15 @@ $$("select[data-dropdown]").forEach(sel => {
   function open() {
     if (openDropdown && openDropdown !== close) openDropdown();
     list.hidden = false; wrap.classList.add("is-open"); btn.setAttribute("aria-expanded", "true");
+    // The card clips anything past its edge, so open upwards when the list would run off its bottom.
+    const card = wrap.closest(".card");
+    wrap.classList.remove("is-up");
+    wrap.classList.toggle("is-up", !!card && list.getBoundingClientRect().bottom > card.getBoundingClientRect().bottom - 8);
     setActive(Math.max(0, opts.findIndex(o => o.value === sel.value)));
     openDropdown = close;
   }
   function close() {
-    list.hidden = true; wrap.classList.remove("is-open"); btn.setAttribute("aria-expanded", "false");
+    list.hidden = true; wrap.classList.remove("is-open", "is-up"); btn.setAttribute("aria-expanded", "false");
     btn.removeAttribute("aria-activedescendant");
     if (openDropdown === close) openDropdown = null;
   }
@@ -1262,12 +1322,6 @@ $$("select[data-dropdown]").forEach(sel => {
 });
 document.addEventListener("click", e => { if (openDropdown && !e.target.closest(".dd.is-open")) openDropdown(); });
 
-// Keep the investment dropdown (stacked layout) and radios (side-by-side layout) in sync.
-const investSel = $("#a-invest");
-const investRadios = $$('input[name="investment"]', applyForm);
-investSel.addEventListener("change", () => { investRadios.forEach(r => { r.checked = r.value === investSel.value; }); });
-investRadios.forEach(r => r.addEventListener("change", () => { investSel.value = r.value; investSel.dispatchEvent(new Event("dd:sync")); }));
-
 /* ---------- Page 2, version 2: one question at a time ---------- */
 const tf = $("#tf"), tfForm = $("#tf-form");
 const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
@@ -1285,7 +1339,7 @@ function initTypeform() {
         ? `<textarea class="tf__input" id="${id}" name="${q.key}" rows="1" placeholder="${esc(q.placeholder || "")}" aria-labelledby="${id}-title"></textarea>`
         : `<input class="tf__input" id="${id}" name="${q.key}" autocomplete="off" placeholder="${esc(q.placeholder || "")}" aria-labelledby="${id}-title">`;
     return `<div class="tf__step" data-i="${i}" hidden>
-      <div class="tf__head"><span class="tf__num">${i + 1}${ARROW}</span><h3 class="tf__title${q.title.length > 110 ? " tf__title--long" : ""}" id="${id}-title">${esc(q.title)} <span class="req">*</span></h3></div>
+      <div class="tf__head"><span class="tf__num">${i + 1}${ARROW}</span><h3 class="tf__title${q.title.length > 110 ? " tf__title--long" : ""}" id="${id}-title">${esc(q.title)}&nbsp;<span class="req">*</span></h3></div>
       <div class="tf__body">
         ${q.help ? `<p class="tf__help">${q.help}</p>` : ""}
         ${field}
@@ -1325,6 +1379,7 @@ function tfNext() {
   const data = typeformData(), key = JSON.stringify(data);
   if (key !== tfSent) { tfSent = key; sendLead(data, "application"); }
   if (tfIndex < APPLY2_QUESTIONS.length - 1) tfShow(tfIndex + 1);
+  else if (CONFIG.disqualify.includes(data.investment)) go("notqualified");
   else tfFinish();
 }
 function tfFinish() {
@@ -1364,6 +1419,33 @@ document.addEventListener("keydown", e => {
   }
 });
 
+/* ---------- Not qualified: Discord button when there's an invite link ---------- */
+if (CONFIG.discordUrl) {
+  $("#nq-discord").href = CONFIG.discordUrl;
+  $("#nq-discord").hidden = false;
+  $("#nq-check").hidden = true;
+}
+
+/* ---------- Results galleries (tap an image to see it bigger) ---------- */
+$$(".receipt > img").forEach(img => {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "receipt__zoom";
+  btn.setAttribute("aria-label", "See bigger: " + img.alt);
+  img.replaceWith(btn);
+  btn.appendChild(img);
+});
+const zoom = $("#zoom"), zoomImg = $("#zoom img");
+document.addEventListener("click", e => {
+  const btn = e.target.closest(".receipt__zoom");
+  if (!btn) return;
+  const small = btn.querySelector("img");
+  zoomImg.src = small.currentSrc || small.src;
+  zoomImg.alt = small.alt;
+  zoom.showModal();
+});
+zoom.addEventListener("click", () => zoom.close());
+
 /* ---------- Calendly ---------- */
 // Name and email come from the page 1 opt-in (or ?name=&email= in the link).
 function calendlyPrefill() {
@@ -1395,7 +1477,10 @@ window.addEventListener("message", e => {
 const toast = (() => {
   const el = $("#toast"), list = CONFIG.recentJoins;
   let i = 0, timer = null;
+  const FIELDS = "input, textarea, select, .dd__btn";
+  const typing = () => !!document.activeElement?.matches(FIELDS);
   function show() {
+    if (typing()) { timer = setTimeout(show, 1500); return; }   // wait until they've left the form field
     const p = list[i++ % list.length];
     $("#toast-name").textContent = p.name;
     $("#toast-city").textContent = p.city;
@@ -1403,6 +1488,8 @@ const toast = (() => {
     el.classList.remove("is-out");
     timer = setTimeout(() => { el.classList.add("is-out"); timer = setTimeout(show, 7000); }, 5000);
   }
+  // Hide it the moment someone taps into a form field, so it never sits on top of the phone keyboard.
+  document.addEventListener("focusin", e => { if (e.target.matches(FIELDS)) el.classList.add("is-out"); });
   return {
     active(on) {
       clearTimeout(timer); el.classList.add("is-out");
