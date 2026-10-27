@@ -38,6 +38,8 @@ Private Integration token) and `GHL_LOCATION_ID`; run `checkGhl` in the script e
 
 - Every event creates or updates the contact (name, email, phone, country) and fills any contact custom
   field whose name matches a sheet column header, e.g. "Instagram", "Investment", "Main Problem".
+- Opportunity custom fields with the same names are filled too. Lead cards in a pipeline can only show
+  opportunity fields, so create the ones you want on cards (e.g. Instagram, Investment, Situation) as Opportunity fields.
 - These funnel steps also add a tag and put the lead's opportunity in a pipeline. It's one opportunity per
   lead: opt-ins land in **Discord** (first stage) for the setters, and booking a call moves that same
   opportunity into **1:1 Mentorship** (first stage). It only ever moves forward, so stages a setter or closer

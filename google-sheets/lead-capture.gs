@@ -174,7 +174,8 @@ function json_(obj) {
  *
  * On every event it creates or updates the contact (GHL matches by email/phone, so it's always the same
  * contact): name, email, phone, country, and any contact custom field whose name matches a sheet column
- * header ("Instagram", "Investment", "Main Goal"…). On the funnel steps in GHL_STEPS it also adds that
+ * header ("Instagram", "Investment", "Main Goal"…). Opportunity custom fields with a matching name are filled too
+ * (lead cards in a pipeline can only show opportunity fields). On the funnel steps in GHL_STEPS it also adds that
  * step's tag and puts their opportunity in that step's pipeline and stage:
  *   - Opt-in            → the Discord pipeline, for the setters to reach out.
  *   - Application       → Applied (or Not Qualified) in Discord, plus a note with all their answers.
@@ -246,13 +247,15 @@ function checkGhl() {
       + (target.missing ? '  (no "' + GHL_STEPS[step].stage + '" stage yet, so the first stage for now)' : '')
       : 'NOT FOUND: check the pipeline names in GHL_PIPELINES') + ', tag ' + GHL_STEPS[step].tag);
   });
-  const filled = [], skipped = [];
+  const filled = [], skipped = [], onCards = [];
   COLUMNS.forEach(([header, field]) => {
     if (field[0] === '@' || GHL_STANDARD.indexOf(field) >= 0) return;
     (setup.fields[norm_(header)] ? filled : skipped).push(header);
+    if ((setup.oppFields || {})[norm_(header)]) onCards.push(header);
   });
-  console.log('Custom fields that will be filled: ' + (filled.join(', ') || 'none yet'));
-  console.log('Sheet columns with no matching custom field (skipped): ' + (skipped.join(', ') || 'none'));
+  console.log('Contact custom fields that will be filled: ' + (filled.join(', ') || 'none yet'));
+  console.log('Sheet columns with no matching contact custom field (skipped): ' + (skipped.join(', ') || 'none'));
+  console.log('Opportunity custom fields that will be filled (these can show on lead cards): ' + (onCards.join(', ') || 'none yet'));
 }
 
 function ghlConfig_() {
@@ -282,7 +285,7 @@ function ghl_(ghl, method, path, body) {
 // The pipelines and their stages, and the contact custom fields by name. Cached for 10 minutes.
 // Each lookup can fail on its own (e.g. a missing token scope) without stopping the contact itself.
 function ghlSetup_(ghl, fresh) {
-  const cache = CacheService.getScriptCache(), cacheKey = 'ghl-setup2-' + ghl.locationId;
+  const cache = CacheService.getScriptCache(), cacheKey = 'ghl-setup3-' + ghl.locationId;
   const cached = !fresh && cache.get(cacheKey);
   if (cached) return JSON.parse(cached);
   const loc = encodeURIComponent(ghl.locationId), errors = [];
@@ -296,10 +299,14 @@ function ghlSetup_(ghl, fresh) {
     const stages = (p.stages || []).slice().sort((a, b) => (a.position || 0) - (b.position || 0));
     pipelines[norm_(p.name)] = { id: p.id, name: p.name, order: order, stages: stages.map(s => ({ id: s.id, name: s.name })) };
   });
-  const fields = {};
-  (get('/locations/' + loc + '/customFields?model=contact').customFields || [])
-    .forEach(f => { fields[norm_(f.name)] = f.id; });
-  const setup = { pipelines: pipelines, fields: fields, errors: errors };
+  const byName = model => {
+    const out = {};
+    (get('/locations/' + loc + '/customFields?model=' + model).customFields || [])
+      .filter(f => !f.model || f.model === model)
+      .forEach(f => { out[norm_(f.name)] = f.id; });
+    return out;
+  };
+  const setup = { pipelines: pipelines, fields: byName('contact'), oppFields: byName('opportunity'), errors: errors };
   if (errors.length) errors.forEach(e => console.error('GoHighLevel: ' + e));
   else cache.put(cacheKey, JSON.stringify(setup), 600);
   return setup;
@@ -330,13 +337,19 @@ function ghlUpsertContact_(ghl, setup, params) {
   if (phone) body.phone = phone;
   if (/^[A-Z]{2}$/.test(params.country || '')) body.country = params.country;
   if (params.version) body.source = 'Ricky funnel ' + params.version;
-  const customFields = [];
-  COLUMNS.forEach(([header, field]) => {
-    const id = setup.fields[norm_(header)], value = String(params[field] || '').trim();
-    if (id && value && field[0] !== '@' && GHL_STANDARD.indexOf(field) < 0) customFields.push({ id: id, field_value: value });
-  });
+  const customFields = ghlCustomFields_(setup.fields, params);
   if (customFields.length) body.customFields = customFields;
   return ghl_(ghl, 'post', '/contacts/upsert', body).contact.id;
+}
+
+// [{ id, field_value }] for every custom field (by id, from ghlSetup_) whose name matches a sheet column with an answer.
+function ghlCustomFields_(fieldIds, params) {
+  const out = [];
+  COLUMNS.forEach(([header, field]) => {
+    const id = (fieldIds || {})[norm_(header)], value = String(params[field] || '').trim();
+    if (id && value && field[0] !== '@' && GHL_STANDARD.indexOf(field) < 0) out.push({ id: id, field_value: value });
+  });
+  return out;
 }
 
 // Creates their opportunity, or moves it to this step's pipeline and stage if that's further along.
@@ -348,18 +361,24 @@ function ghlMoveOpportunity_(ghl, setup, contactId, params, step) {
   const found = (ghl_(ghl, 'get', '/opportunities/search?location_id=' + encodeURIComponent(ghl.locationId)
     + '&contact_id=' + encodeURIComponent(contactId)).opportunities || [])
     .filter(o => (o.contactId === contactId || (o.contact && o.contact.id === contactId)) && ours.indexOf(o.pipelineId) >= 0);
+  const customFields = ghlCustomFields_(setup.oppFields, params);
   if (!found.length) {
-    ghl_(ghl, 'post', '/opportunities/', {
+    const body = {
       locationId: ghl.locationId, pipelineId: target.pipeline.id, pipelineStageId: target.stage.id,
       contactId: contactId, name: String(params.name || params.email).trim(), status: 'open',
-    });
+    };
+    if (customFields.length) body.customFields = customFields;
+    ghl_(ghl, 'post', '/opportunities/', body);
     return;
   }
   // If they somehow have one in each pipeline, the one furthest along is theirs.
   const current = found.sort((a, b) => ghlRank_(setup, b.pipelineId, b.pipelineStageId) - ghlRank_(setup, a.pipelineId, a.pipelineStageId))[0];
+  const update = {};
   if (ghlRank_(setup, target.pipeline.id, target.stage.id) > ghlRank_(setup, current.pipelineId, current.pipelineStageId)) {
-    ghl_(ghl, 'put', '/opportunities/' + current.id, { pipelineId: target.pipeline.id, pipelineStageId: target.stage.id, status: 'open' });
+    Object.assign(update, { pipelineId: target.pipeline.id, pipelineStageId: target.stage.id, status: 'open' });
   }
+  if (customFields.length) update.customFields = customFields;
+  if (Object.keys(update).length) ghl_(ghl, 'put', '/opportunities/' + current.id, update);
 }
 
 // "+1 5551234567" → "+15551234567". If they typed their own "+44…" in the number box, that one wins.
