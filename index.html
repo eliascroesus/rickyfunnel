@@ -336,6 +336,7 @@ h1, h2, h3 { position: relative; font-family: var(--display); margin: 0; text-wr
   box-shadow: 0 20px 50px rgba(0, 0, 0, .5);
 }
 .video iframe, .video video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.video.has-embed { background: #000; }
 .video__ph {
   position: absolute; inset: 0;
   display: grid; place-items: center; align-content: center; gap: 12px;
@@ -994,14 +995,15 @@ const CONFIG = {
   spotsFill: 88,               // % of the scarcity bar that's filled
 
   // Paste an embed URL to replace a placeholder (YouTube/Vimeo/Wistia embed link or an .mp4).
+  // Vimeo links get the player's title, profile picture, name and logo turned off automatically.
   videos: {
-    vsl: "",
+    vsl: "https://player.vimeo.com/video/1239908541",
     nextSteps: "",
-    faqInside: "",
-    faqLegit: "",
-    faqWho: "",
-    faqTime: "",
-    faqLate: ""
+    faqInside: "https://player.vimeo.com/video/1239910534",
+    faqLegit: "https://player.vimeo.com/video/1239910539",
+    faqWho: "https://player.vimeo.com/video/1239913798",
+    faqTime: "https://player.vimeo.com/video/1239910535",
+    faqLate: "https://player.vimeo.com/video/1239910536"
   },
 
   // A/B test for page 2: share of new opt-ins sent to /apply (V1). The rest go to /apply-2 (V2).
@@ -1075,12 +1077,21 @@ $$("[data-fill]").forEach(el => { if (CONFIG[el.dataset.fill] != null) el.textCo
 $("#meter").style.setProperty("--fill", CONFIG.spotsFill + "%");
 
 // Swap placeholders for real embeds when a URL is configured
+// Vimeo player options that strip everything but the video and its controls (the logo needs a paid Vimeo plan).
+const VIMEO_CLEAN = { title: 0, byline: 0, portrait: 0, badge: 0, vimeo_logo: 0, pip: 0, dnt: 1, autopause: 0 };
+function embedUrl(url) {
+  if (!/player\.vimeo\.com\/video\//.test(url)) return url;
+  const u = new URL(url);
+  Object.entries(VIMEO_CLEAN).forEach(([k, v]) => u.searchParams.set(k, v));
+  return u.toString();
+}
 $$(".video[data-video]").forEach(box => {
   const url = CONFIG.videos[box.dataset.video];
   if (!url) return;
+  box.classList.add("has-embed");
   box.innerHTML = /\.(mp4|webm|m3u8)(\?|$)/i.test(url)
     ? `<video src="${url}" controls playsinline></video>`
-    : `<iframe src="${url}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+    : `<iframe src="${embedUrl(url)}" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen title="Video"></iframe>`;
 });
 $$(".video__play").forEach(btn => btn.addEventListener("click", () => btn.closest(".video").classList.toggle("is-playing")));
 $("#unmute")?.addEventListener("click", e => { e.currentTarget.hidden = true; });
