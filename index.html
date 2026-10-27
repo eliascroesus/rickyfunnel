@@ -337,6 +337,45 @@ h1, h2, h3 { position: relative; font-family: var(--display); margin: 0; text-wr
 }
 .video iframe, .video video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .video.has-embed { background: #000; }
+
+/* Our own controls over Vimeo videos */
+.vp__hit { position: absolute; inset: 0; z-index: 1; border: 0; padding: 0; background: transparent; cursor: pointer; }
+.vp__big {
+  position: absolute; z-index: 1; left: 50%; top: 50%; translate: -50% -50%;
+  width: clamp(58px, 11vw, 88px); aspect-ratio: 1; border-radius: 50%;
+  background: var(--accent); color: var(--ink);
+  display: grid; place-items: center;
+  box-shadow: 0 0 0 10px rgba(95, 180, 255, .18);
+  pointer-events: none; opacity: 0; transition: opacity .2s ease;
+}
+.vp__big svg { width: 42%; height: 42%; margin-left: 8%; }
+.vp.is-paused .vp__big { opacity: 1; }
+.vp:has(.vp__listen:not([hidden])) .vp__big { opacity: 0; }
+.vp__bar {
+  position: absolute; z-index: 2; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; gap: 4px;
+  padding: 24px 8px 4px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, .6));
+  opacity: 0; pointer-events: none; transition: opacity .25s ease;
+}
+.vp.is-paused .vp__bar, .vp.show-ui .vp__bar { opacity: 1; pointer-events: auto; }
+.vp:has(.vp__listen:not([hidden])) .vp__bar { opacity: 0; pointer-events: none; }
+.vp__btn {
+  flex: none; width: 38px; height: 38px; padding: 0; border: 0; border-radius: 6px;
+  background: transparent; color: #fff; cursor: pointer;
+  display: grid; place-items: center;
+}
+.vp__btn:hover { background: rgba(255, 255, 255, .14); }
+.vp__btn svg { width: 20px; height: 20px; }
+.vp__toggle svg:last-child, .vp.is-paused .vp__toggle svg:first-child { display: block; }
+.vp__toggle svg:first-child, .vp.is-paused .vp__toggle svg:last-child { display: none; }
+.vp__mute svg:last-child, .vp.is-muted .vp__mute svg:first-child { display: none; }
+.vp.is-muted .vp__mute svg:last-child { display: block; }
+.vp__track { flex: 1; padding: 14px 6px; cursor: pointer; }
+.vp__rail { display: block; height: 5px; border-radius: 999px; background: rgba(255, 255, 255, .28); overflow: hidden; }
+.vp__fill { display: block; height: 100%; width: 0; background: var(--accent); }
+.vp .vp__listen { z-index: 3; }
+.vp:fullscreen { border-radius: 0; box-shadow: none; }
 .video__ph {
   position: absolute; inset: 0;
   display: grid; place-items: center; align-content: center; gap: 12px;
@@ -979,6 +1018,8 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
   </div>
 </div>
 
+<!-- Vimeo's player library (MIT), kept in the repo so the videos never depend on another site. -->
+<script src="/assets/vimeo-player.min.js"></script>
 <script>
 /* =======================================================================
    EDIT ME — everything you'd normally swap lives here.
@@ -1076,23 +1117,115 @@ const store = {
 $$("[data-fill]").forEach(el => { if (CONFIG[el.dataset.fill] != null) el.textContent = CONFIG[el.dataset.fill]; });
 $("#meter").style.setProperty("--fill", CONFIG.spotsFill + "%");
 
-// Swap placeholders for real embeds when a URL is configured
-// Vimeo player options that strip everything but the video and its controls (the logo needs a paid Vimeo plan).
-const VIMEO_CLEAN = { title: 0, byline: 0, portrait: 0, badge: 0, vimeo_logo: 0, pip: 0, dnt: 1, autopause: 0 };
-function embedUrl(url) {
-  if (!/player\.vimeo\.com\/video\//.test(url)) return url;
-  const u = new URL(url);
-  Object.entries(VIMEO_CLEAN).forEach(([k, v]) => u.searchParams.set(k, v));
-  return u.toString();
+// Swap placeholders for real embeds when a URL is configured (only on the page being shown).
+// Vimeo videos play with no Vimeo controls at all (no title, name, picture, logo or share buttons):
+// the page draws its own play button, progress bar, sound and full-screen buttons on top.
+const VIMEO_CLEAN = { title: 0, byline: 0, portrait: 0, badge: 0, vimeo_logo: 0, pip: 0, playsinline: 1, dnt: 1, autopause: 0 };
+const AUTOPLAY_VIDEOS = ["vsl"];   // start on their own (muted, with a "Click to listen" box), like most VSLs
+function embedVideos(page) {
+  $$(".video[data-video]", page).forEach(box => {
+    const url = CONFIG.videos[box.dataset.video];
+    if (!url || box.classList.contains("has-embed")) return;
+    box.classList.add("has-embed");
+    if (/\.(mp4|webm|m3u8)(\?|$)/i.test(url)) { box.innerHTML = `<video src="${url}" controls playsinline></video>`; return; }
+    const autoplay = AUTOPLAY_VIDEOS.includes(box.dataset.video);
+    // Without the player library (e.g. the file opened from disk) Vimeo keeps its own controls.
+    const custom = /player\.vimeo\.com\/video\//.test(url) && !!window.Vimeo;
+    const u = new URL(url);
+    if (/player\.vimeo\.com/.test(url)) {
+      const extra = custom ? { controls: 0, ...(autoplay ? { autoplay: 1, muted: 1 } : {}) } : {};
+      Object.entries({ ...VIMEO_CLEAN, ...extra }).forEach(([k, v]) => u.searchParams.set(k, v));
+    }
+    box.innerHTML = `<iframe src="${u}" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen title="Video"${autoplay ? "" : ' loading="lazy"'}></iframe>`;
+    if (custom) videoControls(box, autoplay);
+  });
 }
-$$(".video[data-video]").forEach(box => {
-  const url = CONFIG.videos[box.dataset.video];
-  if (!url) return;
-  box.classList.add("has-embed");
-  box.innerHTML = /\.(mp4|webm|m3u8)(\?|$)/i.test(url)
-    ? `<video src="${url}" controls playsinline></video>`
-    : `<iframe src="${embedUrl(url)}" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen title="Video"></iframe>`;
-});
+
+const ICONS = {
+  play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>',
+  sound: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5c1.5 1.5 1.5 5.5 0 7M19.5 5.5c3.2 3.2 3.2 9.8 0 13"/></svg>',
+  muted: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M17 9.5l5 5M22 9.5l-5 5"/></svg>',
+  full: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+  listen: '<svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18h10l14-11v34L16 30H6z" fill="currentColor"/><path d="M40 16c3 3 3 13 0 16M47 10c6 6 6 22 0 28"/><path d="M4 4l56 40"/></svg>',
+};
+const players = [];
+function videoControls(box, autoplay) {
+  const player = new Vimeo.Player(box.querySelector("iframe"));
+  players.push(player);
+  // The clear layer on top keeps the mouse off Vimeo's own player, so its buttons never show up.
+  box.insertAdjacentHTML("beforeend", `
+    <button class="vp__hit" type="button" aria-label="Play or pause"></button>
+    <span class="vp__big" aria-hidden="true">${ICONS.play}</span>
+    <div class="vp__bar">
+      <button class="vp__btn vp__toggle" type="button" aria-label="Play or pause">${ICONS.play}${ICONS.pause}</button>
+      <div class="vp__track" role="slider" aria-label="Seek" tabindex="0"><span class="vp__rail"><span class="vp__fill"></span></span></div>
+      <button class="vp__btn vp__mute" type="button" aria-label="Sound on or off">${ICONS.sound}${ICONS.muted}</button>
+      <button class="vp__btn vp__full" type="button" aria-label="Full screen">${ICONS.full}</button>
+    </div>
+    ${autoplay ? `<button class="autoplay vp__listen" type="button"><strong>Your video has already started</strong>${ICONS.listen}<span>Click to listen</span></button>` : ""}`);
+  box.classList.add("vp", "is-paused");
+  box.classList.toggle("is-muted", autoplay);
+  const listen = $(".vp__listen", box), fill = $(".vp__fill", box);
+  let paused = true, muted = autoplay, duration = 0, touch = false, uiTimer = null;
+
+  const showUi = () => {
+    box.classList.add("show-ui");
+    clearTimeout(uiTimer);
+    uiTimer = setTimeout(() => box.classList.remove("show-ui"), 2500);
+  };
+  const setMuted = m => { muted = m; box.classList.toggle("is-muted", m); player.setMuted(m).catch(() => {}); if (!m) player.setVolume(1).catch(() => {}); };
+  const play = () => player.play().catch(() => {
+    // The browser wouldn't play it with sound: keep it going muted and ask again.
+    if (!muted) { setMuted(true); player.play().catch(() => {}); if (listen) listen.hidden = false; }
+  });
+  // "Click to listen": start the VSL over from the beginning, with sound.
+  const unmute = () => {
+    listen.hidden = true;
+    player.setCurrentTime(0).catch(() => {});
+    setMuted(false);
+    play();
+  };
+  const toggle = () => {
+    if (listen && !listen.hidden) return unmute();
+    if (paused) play(); else player.pause().catch(() => {});
+  };
+
+  player.on("play", () => {
+    paused = false; box.classList.remove("is-paused");
+    players.forEach(p => { if (p !== player) p.pause().catch(() => {}); });   // one video at a time
+  });
+  player.on("pause", () => { paused = true; box.classList.add("is-paused"); });
+  player.on("ended", () => { paused = true; box.classList.add("is-paused"); });
+  player.on("timeupdate", d => { duration = d.duration || duration; fill.style.width = (d.percent || 0) * 100 + "%"; });
+
+  const hit = $(".vp__hit", box);
+  hit.addEventListener("pointerdown", e => { touch = e.pointerType === "touch"; });
+  hit.addEventListener("click", () => {
+    // On phones the first tap on a playing video just shows the controls.
+    if (touch && !paused && !box.classList.contains("show-ui") && !(listen && !listen.hidden)) return showUi();
+    toggle(); showUi();
+  });
+  box.addEventListener("pointermove", e => { if (e.pointerType === "mouse") showUi(); });
+  listen?.addEventListener("click", unmute);
+  $(".vp__toggle", box).addEventListener("click", () => { toggle(); showUi(); });
+  $(".vp__mute", box).addEventListener("click", () => {
+    if (listen && !listen.hidden) return unmute();
+    setMuted(!muted); showUi();
+  });
+  $(".vp__full", box).addEventListener("click", () => {
+    if (document.fullscreenElement || document.webkitFullscreenElement) return (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    const go = box.requestFullscreen || box.webkitRequestFullscreen;
+    if (go) go.call(box); else player.requestFullscreen().catch(() => {});   // iPhone: Vimeo's own full screen
+  });
+  const track = $(".vp__track", box);
+  const seek = pct => { if (duration) player.setCurrentTime(Math.max(0, Math.min(1, pct)) * duration * 0.999).catch(() => {}); };
+  track.addEventListener("click", e => { const r = track.getBoundingClientRect(); seek((e.clientX - r.left) / r.width); showUi(); });
+  track.addEventListener("keydown", e => {
+    const step = { ArrowRight: .05, ArrowLeft: -.05 }[e.key];
+    if (step) { e.preventDefault(); seek(parseFloat(fill.style.width || 0) / 100 + step); }
+  });
+}
 $$(".video__play").forEach(btn => btn.addEventListener("click", () => btn.closest(".video").classList.toggle("is-playing")));
 $("#unmute")?.addEventListener("click", e => { e.currentTarget.hidden = true; });
 
@@ -1132,6 +1265,7 @@ function route() {
   const page = $(`[data-view="${VIEW}"]`);
   // Only the visible page's clips play, so the other pages' videos never download.
   $$("video[data-autoplay]", page).forEach(v => { v.preload = "auto"; v.autoplay = true; v.play().catch(() => {}); });
+  embedVideos(page);
   fitHeadings();
   if (VIEW === "apply") prefillApply();
   if (VIEW === "apply2") initTypeform();
