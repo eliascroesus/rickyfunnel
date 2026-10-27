@@ -1080,7 +1080,7 @@ const CONFIG = {
   // GoHighLevel calendar shown on page 2: the calendar's booking link, e.g.
   // "https://api.leadconnectorhq.com/widget/booking/AbC123…" (Calendars → the calendar's ⋮ → Share → Permanent link).
   // When it's filled in, it replaces Calendly. Leave "" to keep Calendly.
-  ghlCalendarUrl: "",
+  ghlCalendarUrl: "https://api.leadconnectorhq.com/widget/booking/1RHbUHkVYYcLuSFWawHy",
 
   // Calendly booking page shown on page 2 (when ghlCalendarUrl is ""). The "hide_*" options strip Calendly's own text.
   calendlyUrl: "https://calendly.com/eliascroesus/ricky-strategy-call?hide_event_type_details=1&hide_landing_page_details=1&hide_gdpr_banner=1",
@@ -1641,7 +1641,7 @@ function initCalendar(el) {
     const phone = (lead.phone || "").replace(/[^\d+]/g, "");
     Object.entries({ first_name: prefill.firstName, last_name: prefill.lastName, name: prefill.name, email: prefill.email, phone })
       .forEach(([k, v]) => { if (v) u.searchParams.set(k, v); });
-    el.innerHTML = `<iframe src="${u}" title="Book your call" scrolling="yes" style="width:100%;height:100%;border:0;overflow:auto"></iframe>`;
+    el.innerHTML = `<iframe src="${u}" title="Book your call" allow="payment" scrolling="yes" style="width:100%;height:100%;border:0;overflow:auto"></iframe>`;
     return;
   }
   if (!window.Calendly) { loadCalendly(); setTimeout(() => initCalendar(el), 300); return; }
