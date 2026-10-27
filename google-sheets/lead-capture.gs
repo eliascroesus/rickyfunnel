@@ -172,20 +172,26 @@ function json_(obj) {
  *   GHL_LOCATION_ID  the sub-account's Location ID
  * Then pick "checkGhl" in the function dropdown and Run it: the log shows what it found and what's missing.
  *
- * On every event it creates or updates the contact (GHL matches by email/phone): name, email, phone,
- * country, and any contact custom field whose name matches a sheet column header ("Instagram",
- * "Investment", "Main Problem"…). On the funnel steps in GHL_STEPS it also adds that step's tag and puts
- * their opportunity in that stage of the GHL_PIPELINE pipeline. Opportunities only move forward: a stage
- * you add yourself (e.g. "Showed" or "Won") counts as further along than all of these.
+ * On every event it creates or updates the contact (GHL matches by email/phone, so it's always the same
+ * contact): name, email, phone, country, and any contact custom field whose name matches a sheet column
+ * header ("Instagram", "Investment", "Main Goal"…). On the funnel steps in GHL_STEPS it also adds that
+ * step's tag and puts their opportunity in that step's pipeline and stage:
+ *   - Opt-in            → the Discord pipeline, for the setters to reach out.
+ *   - Booked a call     → the same opportunity moves over to the 1:1 Mentorship pipeline.
+ * Opportunities only move forward: 1:1 Mentorship counts as further along than Discord, and inside a
+ * pipeline a stage further right counts as further along. So when a setter has moved someone along by
+ * hand, the funnel never drags them back.
  */
 const GHL_API = 'https://services.leadconnectorhq.com';
-const GHL_PIPELINE = 'Ricky Mentorship';   // must match the pipeline's name in GHL
-// Funnel step → pipeline stage name (must match GHL, capitals aside), tag, and how far along it is.
+// Pipeline names as they are in GHL (capitals aside), from the start of the funnel to the end.
+const GHL_PIPELINES = ['Discord', '1:1 Mentorship'];
+// Funnel step → pipeline, stage and tag. Leave stage as '' to use the pipeline's first stage
+// (for "applied" and "not_qualified" that means they stay where they are in Discord).
 const GHL_STEPS = {
-  optin:         { stage: 'Opted In',      tag: 'ricky-optin',         rank: 1 },
-  not_qualified: { stage: 'Not Qualified', tag: 'ricky-not-qualified', rank: 2 },
-  applied:       { stage: 'Applied',       tag: 'ricky-applied',       rank: 2 },
-  booked:        { stage: 'Call Booked',   tag: 'ricky-booked',        rank: 3 },
+  optin:         { pipeline: 'Discord',        stage: '', tag: 'ricky-optin' },
+  not_qualified: { pipeline: 'Discord',        stage: '', tag: 'ricky-not-qualified' },
+  applied:       { pipeline: 'Discord',        stage: '', tag: 'ricky-applied' },
+  booked:        { pipeline: '1:1 Mentorship', stage: '', tag: 'ricky-booked' },
 };
 // Sheet fields that go into GHL's own contact fields rather than custom fields.
 const GHL_STANDARD = ['name', 'email', 'phone', 'country'];
@@ -208,10 +214,15 @@ function checkGhl() {
   if (!ghl) return console.log('Add GHL_TOKEN and GHL_LOCATION_ID under Project Settings → Script properties first.');
   const setup = ghlSetup_(ghl, true);
   console.log(setup.errors.length ? 'Problems above. A 401 means a wrong token or Location ID; a 403 means the token is missing a scope.' : 'Connected.');
-  console.log('Pipeline "' + GHL_PIPELINE + '": ' + (setup.pipelineId ? 'found' : 'NOT FOUND (create it under Opportunities → Pipelines)'));
+  GHL_PIPELINES.forEach(name => {
+    const p = setup.pipelines[norm_(name)];
+    console.log('Pipeline "' + name + '": ' + (p ? 'found, stages: ' + p.stages.map(s => s.name).join(' → ')
+      : 'NOT FOUND (create it under Opportunities → Pipelines, or fix the name in GHL_PIPELINES)'));
+  });
   Object.keys(GHL_STEPS).forEach(step => {
-    const name = GHL_STEPS[step].stage;
-    console.log('  stage "' + name + '": ' + (setup.stages.some(s => norm_(s.name) === norm_(name)) ? 'found' : 'MISSING'));
+    const target = ghlTarget_(setup, step);
+    console.log('  ' + step + ' → ' + (target ? '"' + target.pipeline.name + '" / "' + target.stage.name + '"'
+      : 'NOT FOUND: check the pipeline and stage names in GHL_STEPS') + ', tag ' + GHL_STEPS[step].tag);
   });
   const filled = [], skipped = [];
   COLUMNS.forEach(([header, field]) => {
@@ -246,30 +257,45 @@ function ghl_(ghl, method, path, body) {
   return text ? JSON.parse(text) : {};
 }
 
-// The pipeline and its stages, and the contact custom fields by name. Cached for 10 minutes.
+// The pipelines and their stages, and the contact custom fields by name. Cached for 10 minutes.
 // Each lookup can fail on its own (e.g. a missing token scope) without stopping the contact itself.
 function ghlSetup_(ghl, fresh) {
-  const cache = CacheService.getScriptCache(), cacheKey = 'ghl-setup-' + ghl.locationId;
+  const cache = CacheService.getScriptCache(), cacheKey = 'ghl-setup2-' + ghl.locationId;
   const cached = !fresh && cache.get(cacheKey);
   if (cached) return JSON.parse(cached);
   const loc = encodeURIComponent(ghl.locationId), errors = [];
   const get = path => {
     try { return ghl_(ghl, 'get', path); } catch (err) { errors.push(String(err)); return {}; }
   };
-  const pipeline = (get('/opportunities/pipelines?locationId=' + loc).pipelines || [])
-    .find(p => norm_(p.name) === norm_(GHL_PIPELINE));
+  const pipelines = {};
+  (get('/opportunities/pipelines?locationId=' + loc).pipelines || []).forEach(p => {
+    const order = GHL_PIPELINES.findIndex(name => norm_(name) === norm_(p.name));
+    if (order < 0) return;
+    const stages = (p.stages || []).slice().sort((a, b) => (a.position || 0) - (b.position || 0));
+    pipelines[norm_(p.name)] = { id: p.id, name: p.name, order: order, stages: stages.map(s => ({ id: s.id, name: s.name })) };
+  });
   const fields = {};
   (get('/locations/' + loc + '/customFields?model=contact').customFields || [])
     .forEach(f => { fields[norm_(f.name)] = f.id; });
-  const setup = {
-    pipelineId: pipeline ? pipeline.id : '',
-    stages: pipeline ? (pipeline.stages || []).map(s => ({ id: s.id, name: s.name })) : [],
-    fields: fields,
-    errors: errors,
-  };
+  const setup = { pipelines: pipelines, fields: fields, errors: errors };
   if (errors.length) errors.forEach(e => console.error('GoHighLevel: ' + e));
   else cache.put(cacheKey, JSON.stringify(setup), 600);
   return setup;
+}
+
+// The pipeline and stage a funnel step goes to, or null if GHL doesn't have them.
+function ghlTarget_(setup, step) {
+  const want = GHL_STEPS[step], pipeline = setup.pipelines[norm_(want.pipeline)];
+  if (!pipeline || !pipeline.stages.length) return null;
+  const stage = want.stage ? pipeline.stages.find(s => norm_(s.name) === norm_(want.stage)) : pipeline.stages[0];
+  return stage ? { pipeline: pipeline, stage: stage } : null;
+}
+
+// How far along a pipeline + stage is: later pipelines first, then stages further right.
+function ghlRank_(setup, pipelineId, stageId) {
+  const pipeline = Object.keys(setup.pipelines).map(k => setup.pipelines[k]).find(p => p.id === pipelineId);
+  if (!pipeline) return -1;
+  return pipeline.order * 1000 + pipeline.stages.findIndex(s => s.id === stageId);
 }
 
 function ghlUpsertContact_(ghl, setup, params) {
@@ -290,26 +316,26 @@ function ghlUpsertContact_(ghl, setup, params) {
   return ghl_(ghl, 'post', '/contacts/upsert', body).contact.id;
 }
 
-// Creates their opportunity in the pipeline, or moves it to this step's stage if that's further along.
+// Creates their opportunity, or moves it to this step's pipeline and stage if that's further along.
+// It's one opportunity per lead: booking a call moves their Discord opportunity into 1:1 Mentorship.
 function ghlMoveOpportunity_(ghl, setup, contactId, params, step) {
-  const target = GHL_STEPS[step];
-  const stage = setup.stages.find(s => norm_(s.name) === norm_(target.stage));
-  if (!setup.pipelineId || !stage) return console.warn('GoHighLevel: no "' + target.stage + '" stage in the "' + GHL_PIPELINE + '" pipeline');
-  const found = ghl_(ghl, 'get', '/opportunities/search?location_id=' + encodeURIComponent(ghl.locationId)
-    + '&pipeline_id=' + encodeURIComponent(setup.pipelineId) + '&contact_id=' + encodeURIComponent(contactId)).opportunities || [];
-  const current = found.find(o => o.contactId === contactId || (o.contact && o.contact.id === contactId));
-  if (!current) {
+  const target = ghlTarget_(setup, step);
+  if (!target) return console.warn('GoHighLevel: no pipeline/stage for "' + step + '"; run checkGhl');
+  const ours = Object.keys(setup.pipelines).map(k => setup.pipelines[k].id);
+  const found = (ghl_(ghl, 'get', '/opportunities/search?location_id=' + encodeURIComponent(ghl.locationId)
+    + '&contact_id=' + encodeURIComponent(contactId)).opportunities || [])
+    .filter(o => (o.contactId === contactId || (o.contact && o.contact.id === contactId)) && ours.indexOf(o.pipelineId) >= 0);
+  if (!found.length) {
     ghl_(ghl, 'post', '/opportunities/', {
-      locationId: ghl.locationId, pipelineId: setup.pipelineId, pipelineStageId: stage.id,
+      locationId: ghl.locationId, pipelineId: target.pipeline.id, pipelineStageId: target.stage.id,
       contactId: contactId, name: String(params.name || params.email).trim(), status: 'open',
     });
     return;
   }
-  if (current.pipelineStageId === stage.id) return;
-  const currentStage = setup.stages.find(s => s.id === current.pipelineStageId);
-  const currentStep = currentStage && Object.keys(GHL_STEPS).find(k => norm_(GHL_STEPS[k].stage) === norm_(currentStage.name));
-  if (target.rank >= (currentStep ? GHL_STEPS[currentStep].rank : 99)) {
-    ghl_(ghl, 'put', '/opportunities/' + current.id, { pipelineId: setup.pipelineId, pipelineStageId: stage.id });
+  // If they somehow have one in each pipeline, the one furthest along is theirs.
+  const current = found.sort((a, b) => ghlRank_(setup, b.pipelineId, b.pipelineStageId) - ghlRank_(setup, a.pipelineId, a.pipelineStageId))[0];
+  if (ghlRank_(setup, target.pipeline.id, target.stage.id) > ghlRank_(setup, current.pipelineId, current.pipelineStageId)) {
+    ghl_(ghl, 'put', '/opportunities/' + current.id, { pipelineId: target.pipeline.id, pipelineStageId: target.stage.id, status: 'open' });
   }
 }
 

@@ -38,18 +38,21 @@ Private Integration token) and `GHL_LOCATION_ID`; run `checkGhl` in the script e
 
 - Every event creates or updates the contact (name, email, phone, country) and fills any contact custom
   field whose name matches a sheet column header, e.g. "Instagram", "Investment", "Main Problem".
-- These funnel steps also add a tag and set the opportunity's stage in the **Ricky Mentorship** pipeline.
-  Stages are matched by name and only move forward; stages added by hand (Showed, Won…) are never moved back.
+- These funnel steps also add a tag and put the lead's opportunity in a pipeline. It's one opportunity per
+  lead: opt-ins land in **Discord** (first stage) for the setters, and booking a call moves that same
+  opportunity into **1:1 Mentorship** (first stage). It only ever moves forward, so stages a setter or closer
+  moved someone to by hand are never undone.
 
-| Funnel step | Stage | Tag |
+| Funnel step | Pipeline / stage | Tag |
 | --- | --- | --- |
-| Opt-in on page 1 | Opted In | `ricky-optin` |
-| Finished an application (`/apply` or `/apply-2`) | Applied | `ricky-applied` |
-| "Don't qualify" investment answer | Not Qualified | `ricky-not-qualified` |
-| Calendly booking | Call Booked | `ricky-booked` |
+| Opt-in on page 1 | Discord / first stage | `ricky-optin` |
+| Finished an application (`/apply` or `/apply-2`) | stays where it is | `ricky-applied` |
+| "Don't qualify" investment answer | stays where it is | `ricky-not-qualified` |
+| Calendly booking | 1:1 Mentorship / first stage | `ricky-booked` |
 
 The page marks a finished application with a `stage` field; single answers only update the contact's fields.
-Pipeline, stage and tag names live in `GHL_PIPELINE` and `GHL_STEPS` at the bottom of `lead-capture.gs`.
+Pipeline names, stages and tags live in `GHL_PIPELINES` and `GHL_STEPS` in `lead-capture.gs`; a step can be
+sent to a named stage instead of the first one.
 
 ## Editing
 
