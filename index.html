@@ -1232,10 +1232,11 @@ applyForm.addEventListener("change", checkApply);
 const applicationData = () => ({ ...lead, ...Object.fromEntries(new FormData(applyForm)) });
 let applicationSent = "", applicationTimer = null;
 // A disqualifying investment answer sends them to /not-qualified once the answers are saved.
+// "stage" marks a finished application, which is what moves them along in GoHighLevel.
 function queueApplication(disqualified) {
   clearTimeout(applicationTimer);
   applicationTimer = setTimeout(() => {
-    const data = applicationData(), key = JSON.stringify(data);
+    const data = { ...applicationData(), stage: disqualified ? "not_qualified" : "applied" }, key = JSON.stringify(data);
     if (key !== applicationSent) { applicationSent = key; sendLead(data, "application"); }
     if (disqualified) go("notqualified");
   }, 1500);
@@ -1376,10 +1377,14 @@ function tfNext() {
   }
   err.hidden = true;
   // Save each answer as it's given, so drop-offs show in the sheet (skipped if nothing changed).
-  const data = typeformData(), key = JSON.stringify(data);
-  if (key !== tfSent) { tfSent = key; sendLead(data, "application"); }
-  if (tfIndex < APPLY2_QUESTIONS.length - 1) tfShow(tfIndex + 1);
-  else if (CONFIG.disqualify.includes(data.investment)) go("notqualified");
+  // The last answer also sends "stage", which is what moves them along in GoHighLevel.
+  const last = tfIndex === APPLY2_QUESTIONS.length - 1, data = typeformData();
+  const out = CONFIG.disqualify.includes(data.investment);
+  if (last) data.stage = out ? "not_qualified" : "applied";
+  const key = JSON.stringify(data);
+  if (data.email && key !== tfSent) { tfSent = key; sendLead(data, "application"); }
+  if (!last) tfShow(tfIndex + 1);
+  else if (out) go("notqualified");
   else tfFinish();
 }
 function tfFinish() {
