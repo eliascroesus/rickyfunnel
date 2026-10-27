@@ -46,8 +46,8 @@ Private Integration token) and `GHL_LOCATION_ID`; run `checkGhl` in the script e
 | Funnel step | Pipeline / stage | Tag |
 | --- | --- | --- |
 | Opt-in on page 1 | Discord / first stage | `ricky-optin` |
-| Finished an application (`/apply` or `/apply-2`) | stays where it is | `ricky-applied` |
-| "Don't qualify" investment answer | stays where it is | `ricky-not-qualified` |
+| Finished an application (`/apply` or `/apply-2`) | Discord / Applied, plus a note with every answer | `ricky-applied` |
+| "Don't qualify" investment answer | Discord / Not Qualified, plus a note with every answer | `ricky-not-qualified` |
 | Calendly booking | 1:1 Mentorship / first stage | `ricky-booked` |
 
 The page marks a finished application with a `stage` field; single answers only update the contact's fields.

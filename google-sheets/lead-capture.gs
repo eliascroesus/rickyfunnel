@@ -177,6 +177,7 @@ function json_(obj) {
  * header ("Instagram", "Investment", "Main Goal"…). On the funnel steps in GHL_STEPS it also adds that
  * step's tag and puts their opportunity in that step's pipeline and stage:
  *   - Opt-in            → the Discord pipeline, for the setters to reach out.
+ *   - Application       → Applied (or Not Qualified) in Discord, plus a note with all their answers.
  *   - Booked a call     → the same opportunity moves over to the 1:1 Mentorship pipeline.
  * Opportunities only move forward: 1:1 Mentorship counts as further along than Discord, and inside a
  * pipeline a stage further right counts as further along. So when a setter has moved someone along by
@@ -185,14 +186,16 @@ function json_(obj) {
 const GHL_API = 'https://services.leadconnectorhq.com';
 // Pipeline names as they are in GHL (capitals aside), from the start of the funnel to the end.
 const GHL_PIPELINES = ['Discord', '1:1 Mentorship'];
-// Funnel step → pipeline, stage and tag. Leave stage as '' to use the pipeline's first stage
-// (for "applied" and "not_qualified" that means they stay where they are in Discord).
+// Funnel step → pipeline, stage and tag. Stage names must match GHL (capitals aside);
+// leave a stage as '' to use the pipeline's first stage. If GHL doesn't have the stage, the first stage is used.
 const GHL_STEPS = {
-  optin:         { pipeline: 'Discord',        stage: '', tag: 'ricky-optin' },
-  not_qualified: { pipeline: 'Discord',        stage: '', tag: 'ricky-not-qualified' },
-  applied:       { pipeline: 'Discord',        stage: '', tag: 'ricky-applied' },
-  booked:        { pipeline: '1:1 Mentorship', stage: '', tag: 'ricky-booked' },
+  optin:         { pipeline: 'Discord',        stage: '',              tag: 'ricky-optin' },
+  applied:       { pipeline: 'Discord',        stage: 'Applied',       tag: 'ricky-applied' },
+  not_qualified: { pipeline: 'Discord',        stage: 'Not Qualified', tag: 'ricky-not-qualified' },
+  booked:        { pipeline: '1:1 Mentorship', stage: '',              tag: 'ricky-booked' },
 };
+// The application answers that go into the note on the contact, in this order.
+const GHL_NOTE_FIELDS = ['situation', 'experience', 'motivation', 'goal', 'reason', 'obstacles', 'ready', 'investment', 'instagram'];
 // Sheet fields that go into GHL's own contact fields rather than custom fields.
 const GHL_STANDARD = ['name', 'email', 'phone', 'country'];
 
@@ -206,6 +209,24 @@ function syncToGhl_(type, params) {
   if (!step) return;
   ghl_(ghl, 'post', '/contacts/' + contactId + '/tags', { tags: [GHL_STEPS[step].tag] });
   ghlMoveOpportunity_(ghl, setup, contactId, params, step);
+  if (step === 'applied' || step === 'not_qualified') ghlNote_(ghl, contactId, params, step);
+}
+
+// A finished application also goes on the contact as one readable note, so setters and closers
+// see every answer at a glance (Contact → Notes, or Notes on the opportunity).
+function ghlNote_(ghl, contactId, params, step) {
+  const lines = GHL_NOTE_FIELDS
+    .map(field => [COLUMNS.find(([, f]) => f === field), String(params[field] || '').trim()])
+    .filter(([col, value]) => col && value)
+    .map(([col, value]) => col[0] + ': ' + value);
+  if (!lines.length) return;
+  const head = (step === 'applied' ? '✅ Application' : '❌ Application (not qualified)')
+    + (params.version ? ' · ' + params.version + (params.version === 'V1' ? ' /apply' : ' /apply-2') : '');
+  try {
+    ghl_(ghl, 'post', '/contacts/' + contactId + '/notes', { body: head + '\n\n' + lines.join('\n') });
+  } catch (err) {
+    console.error('GoHighLevel note: ' + err);
+  }
 }
 
 // Run this from the editor after adding the Script properties: checks the connection and lists what it matched.
@@ -222,7 +243,8 @@ function checkGhl() {
   Object.keys(GHL_STEPS).forEach(step => {
     const target = ghlTarget_(setup, step);
     console.log('  ' + step + ' → ' + (target ? '"' + target.pipeline.name + '" / "' + target.stage.name + '"'
-      : 'NOT FOUND: check the pipeline and stage names in GHL_STEPS') + ', tag ' + GHL_STEPS[step].tag);
+      + (target.missing ? '  (no "' + GHL_STEPS[step].stage + '" stage yet, so the first stage for now)' : '')
+      : 'NOT FOUND: check the pipeline names in GHL_PIPELINES') + ', tag ' + GHL_STEPS[step].tag);
   });
   const filled = [], skipped = [];
   COLUMNS.forEach(([header, field]) => {
@@ -283,12 +305,13 @@ function ghlSetup_(ghl, fresh) {
   return setup;
 }
 
-// The pipeline and stage a funnel step goes to, or null if GHL doesn't have them.
+// The pipeline and stage a funnel step goes to, or null if GHL doesn't have the pipeline.
+// A stage name GHL doesn't have falls back to the pipeline's first stage ("missing" says so).
 function ghlTarget_(setup, step) {
   const want = GHL_STEPS[step], pipeline = setup.pipelines[norm_(want.pipeline)];
   if (!pipeline || !pipeline.stages.length) return null;
-  const stage = want.stage ? pipeline.stages.find(s => norm_(s.name) === norm_(want.stage)) : pipeline.stages[0];
-  return stage ? { pipeline: pipeline, stage: stage } : null;
+  const named = want.stage && pipeline.stages.find(s => norm_(s.name) === norm_(want.stage));
+  return { pipeline: pipeline, stage: named || pipeline.stages[0], missing: !!want.stage && !named };
 }
 
 // How far along a pipeline + stage is: later pipelines first, then stages further right.
@@ -320,7 +343,7 @@ function ghlUpsertContact_(ghl, setup, params) {
 // It's one opportunity per lead: booking a call moves their Discord opportunity into 1:1 Mentorship.
 function ghlMoveOpportunity_(ghl, setup, contactId, params, step) {
   const target = ghlTarget_(setup, step);
-  if (!target) return console.warn('GoHighLevel: no pipeline/stage for "' + step + '"; run checkGhl');
+  if (!target) return console.warn('GoHighLevel: no "' + GHL_STEPS[step].pipeline + '" pipeline; run checkGhl');
   const ours = Object.keys(setup.pipelines).map(k => setup.pipelines[k].id);
   const found = (ghl_(ghl, 'get', '/opportunities/search?location_id=' + encodeURIComponent(ghl.locationId)
     + '&contact_id=' + encodeURIComponent(contactId)).opportunities || [])
