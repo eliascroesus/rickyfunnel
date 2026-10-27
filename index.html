@@ -766,28 +766,28 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
         <form class="booker__form" id="apply-form" novalidate>
           <h3><span data-fill="brand">Ricky</span> Strategy Call</h3>
           <div class="field">
-            <label for="a-exp">Where Are You At With Dropshipping?&nbsp;<span class="req">*</span></label>
+            <label for="a-exp">What Is Your Experience With Dropshipping?&nbsp;<span class="req">*</span></label>
             <select class="select" data-dropdown id="a-exp" name="experience" required>
               <option value="">Select</option>
               <option>Brand new, haven't started yet</option>
               <option>I have a store but no sales yet</option>
-              <option>I've made a few sales</option>
+              <option>I've made some sales but nothing consistent</option>
               <option>I'm making sales and want to scale</option>
             </select>
           </div>
           <div class="field">
-            <label for="a-reason">What's The Main Thing Stopping You Right Now?&nbsp;<span class="req">*</span></label>
-            <select class="select" data-dropdown id="a-reason" name="reason" required>
+            <label for="a-why">What Is Your Goal With Dropshipping?&nbsp;<span class="req">*</span></label>
+            <select class="select" data-dropdown id="a-why" name="motivation" required>
               <option value="">Select</option>
-              <option>I can't find a product that sells</option>
-              <option>My videos get views but no sales</option>
-              <option>I can't tell if it's my product, store or videos</option>
-              <option>I've wasted money on courses that didn't help</option>
-              <option>I don't have much time with my job</option>
+              <option>To replace my 9–5 income</option>
+              <option>To hit my first $10K month</option>
+              <option>To build a side income next to my job or school</option>
+              <option>To travel the world and have freedom</option>
+              <option>To retire my parents</option>
             </select>
           </div>
           <div class="field">
-            <label for="a-invest">How much have you set aside to invest in yourself and your store?&nbsp;<span class="req">*</span></label>
+            <label for="a-invest">How much do you have saved up to invest in yourself, your store, and your dropshipping journey?&nbsp;<span class="req">*</span></label>
             <select class="select" data-dropdown id="a-invest" name="investment" required>
               <option value="">Select</option>
               <option>Under $500</option>
@@ -795,6 +795,25 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
               <option>$1,500 – $3,000</option>
               <option>$3,000 – $5,000</option>
               <option>$5,000+</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="a-reason">What Is The Biggest Issue With Your Dropshipping Right Now?&nbsp;<span class="req">*</span></label>
+            <select class="select" data-dropdown id="a-reason" name="reason" required>
+              <option value="">Select</option>
+              <option>I can't find a product that sells</option>
+              <option>My videos don't get views</option>
+              <option>My videos get views but no sales</option>
+              <option>I keep wasting money on products, tools or courses</option>
+              <option>I don't know where to start with dropshipping</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="a-ready">Are you ready to fix the issue in your previous answer?&nbsp;<span class="req">*</span></label>
+            <select class="select" data-dropdown id="a-ready" name="ready" required>
+              <option value="">Select</option>
+              <option>Yes, I am ready to achieve my goal</option>
+              <option>No, I don't want to fix my problem</option>
             </select>
           </div>
           <div class="field">
@@ -1080,7 +1099,7 @@ const APPLY2_QUESTIONS = [
   {
     key: "situation", type: "choice",
     title: "Which of these best describes your situation right now?",
-    options: ["I'm already selling and want to scale", "I've been trying dropshipping and I'm stuck", "I'm completely new to dropshipping"]
+    options: ["I'm already making sales and want to scale to consistent $10K months", "I've been trying dropshipping and I'm stuck", "I'm completely new to dropshipping"]
   },
   {
     key: "goal", type: "long",
