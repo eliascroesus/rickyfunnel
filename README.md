@@ -55,3 +55,8 @@ Pipeline, stage and tag names live in `GHL_PIPELINE` and `GHL_STEPS` at the bott
 
 Brand name, videos, call times and the sheet URL are all in the `CONFIG` block. To swap a video
 placeholder for a real video, paste its embed link into `CONFIG.videos`.
+
+Vimeo videos play with Vimeo's own controls switched off (no title, name, picture, logo or share
+buttons). The page draws its own play button, progress bar, sound and full-screen buttons on top, using
+Vimeo's player library in `assets/vimeo-player.min.js`. Videos listed in `AUTOPLAY_VIDEOS` (the VSL)
+start on their own, muted, with a "Click to listen" box that restarts them with sound.
