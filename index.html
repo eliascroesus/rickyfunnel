@@ -9,7 +9,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://assets.calendly.com">
 <link rel="preconnect" href="https://calendly.com">
-<script src="https://assets.calendly.com/assets/external/widget.js" async></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,600;0,700;0,800;1,700;1,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap">
 <script>
   // Pick the page from the URL before anything draws, so /apply never flashes page 1.
@@ -541,6 +540,7 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
 @media (min-width: 761px) {
   .tf__cal .cal-embed { --cal-crop-top: 66px; }
   .tf__cal .cal-embed iframe { display: block; margin-top: calc(-1 * var(--cal-crop-top)); height: calc(100% + var(--cal-crop-top)) !important; }
+  .tf__cal .cal-embed.is-ghl { --cal-crop-top: 0px; }
 }
 /* While the questions are on screen, Calendly sits behind them fully see-through. Not visibility: hidden:
    browsers pause drawing inside hidden frames, so it would only finish loading once shown. */
@@ -1077,7 +1077,12 @@ const CONFIG = {
   // Discord invite link for the button on /not-qualified. Leave "" to tell them to check their email + SMS.
   discordUrl: "",
 
-  // Calendly booking page shown on page 2. The "hide_*" options strip Calendly's own text.
+  // GoHighLevel calendar shown on page 2: the calendar's booking link, e.g.
+  // "https://api.leadconnectorhq.com/widget/booking/AbC123…" (Calendars → the calendar's ⋮ → Share → Permanent link).
+  // When it's filled in, it replaces Calendly. Leave "" to keep Calendly.
+  ghlCalendarUrl: "",
+
+  // Calendly booking page shown on page 2 (when ghlCalendarUrl is ""). The "hide_*" options strip Calendly's own text.
   calendlyUrl: "https://calendly.com/eliascroesus/ricky-strategy-call?hide_event_type_details=1&hide_landing_page_details=1&hide_gdpr_banner=1",
 
   // "Just joined" toast. PLACEHOLDER DATA — feed this from real opt-ins (your CRM / Discord bot)
@@ -1325,7 +1330,7 @@ const qs = new URLSearchParams(location.search);   // UTM-style prefill: ?name=&
 
 function prefillApply() {
   checkApply();
-  initCalendly($("#cal-embed"));   // start loading Calendly behind the blur right away
+  initCalendar($("#cal-embed"));   // start loading the calendar behind the blur right away
 }
 
 /* ---------- Send to the Google Sheet ---------- */
@@ -1515,7 +1520,7 @@ function initTypeform() {
   }).join("");
   tfSteps = $$(".tf__step", tfForm);
   tfShow(0);
-  initCalendly($("#tf-embed"));   // loads hidden now, so it's ready the moment the last answer is in
+  initCalendar($("#tf-embed"));   // loads hidden now, so it's ready the moment the last answer is in
 }
 function tfValue(i) {
   const q = APPLY2_QUESTIONS[i];
@@ -1615,27 +1620,60 @@ document.addEventListener("click", e => {
 });
 zoom.addEventListener("click", () => zoom.close());
 
-/* ---------- Calendly ---------- */
-// Name and email come from the page 1 opt-in (or ?name=&email= in the link).
+/* ---------- Booking calendar (GoHighLevel, or Calendly) ---------- */
+// Name, email and phone come from the page 1 opt-in (or ?name=&email= in the link).
 function calendlyPrefill() {
   const name = (lead.name || "").trim().replace(/\s+/g, " ");
   const [firstName, ...rest] = name.split(" ");
   // Send both forms so the name fills in whether the event asks for "Name" or "First / Last name".
   return { name, firstName, lastName: rest.join(" "), email: (lead.email || "").trim() };
 }
-function initCalendly(el) {
+function initCalendar(el) {
   if (!el) return;
-  if (!window.Calendly) { setTimeout(() => initCalendly(el), 300); return; }   // widget.js loads async
   const prefill = calendlyPrefill();
   const key = prefill.name + "|" + prefill.email;
   if (key === el.dataset.calKey) return;
+  if (CONFIG.ghlCalendarUrl) {
+    el.dataset.calKey = key;
+    el.classList.add("is-ghl");
+    // GHL fills its booking form from these when the calendar has "pre-populate fields" on.
+    const u = new URL(CONFIG.ghlCalendarUrl);
+    const phone = (lead.phone || "").replace(/[^\d+]/g, "");
+    Object.entries({ first_name: prefill.firstName, last_name: prefill.lastName, name: prefill.name, email: prefill.email, phone })
+      .forEach(([k, v]) => { if (v) u.searchParams.set(k, v); });
+    el.innerHTML = `<iframe src="${u}" title="Book your call" scrolling="yes" style="width:100%;height:100%;border:0;overflow:auto"></iframe>`;
+    return;
+  }
+  if (!window.Calendly) { loadCalendly(); setTimeout(() => initCalendar(el), 300); return; }
   el.dataset.calKey = key;
   el.innerHTML = "";
   Calendly.initInlineWidget({ url: CONFIG.calendlyUrl, parentElement: el, prefill });
 }
-// Calendly tells the page when a call is booked; then move on to page 3.
+// Calendly's script only loads when Calendly is the calendar in use.
+function loadCalendly() {
+  if (document.querySelector('script[src*="assets.calendly.com"]')) return;
+  const js = document.createElement("script");
+  js.src = "https://assets.calendly.com/assets/external/widget.js";
+  js.async = true;
+  document.head.appendChild(js);
+}
+// The calendar tells the page when a call is booked; then move on to page 3.
+// GHL sends ["msgsndr-booking-complete", {…}]; Calendly sends { event: "calendly.event_scheduled" }.
+// Add ?debug to the page link to see every message the calendar sends in the browser console.
+function isGhlBooking(e) {
+  if (!CONFIG.ghlCalendarUrl) return false;
+  const ghlHost = /(^|\.)(leadconnectorhq\.com|msgsndr\.com)$/.test(new URL(e.origin).hostname)
+    || e.origin === new URL(CONFIG.ghlCalendarUrl).origin;
+  const text = typeof e.data === "string" ? e.data : Array.isArray(e.data) ? String(e.data[0]) : "";
+  return ghlHost && /booking-complete/i.test(text);
+}
+let bookingSent = false;
 window.addEventListener("message", e => {
-  if (e.origin !== "https://calendly.com" || e.data?.event !== "calendly.event_scheduled") return;
+  if (/[?&]debug\b/.test(location.search)) console.log("[calendar message]", e.origin, e.data);
+  const calendly = e.origin === "https://calendly.com" && e.data?.event === "calendly.event_scheduled";
+  if (!calendly && !isGhlBooking(e)) return;
+  if (bookingSent) return;
+  bookingSent = true;
   const answers = VIEW === "apply2" ? typeformData() : applicationData();
   store.set("booking", { ...answers, bookedAt: Date.now() });
   sendLead(answers, "booked");
