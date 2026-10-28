@@ -766,16 +766,6 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
         <form class="booker__form" id="apply-form" novalidate>
           <h3><span data-fill="brand">Ricky</span> Strategy Call</h3>
           <div class="field">
-            <label for="a-exp">What Is Your Experience With Dropshipping?&nbsp;<span class="req">*</span></label>
-            <select class="select" data-dropdown id="a-exp" name="experience" required>
-              <option value="">Select</option>
-              <option>Brand new, haven't started yet</option>
-              <option>I have a store but no sales yet</option>
-              <option>I've made some sales but nothing consistent</option>
-              <option>I'm making sales and want to scale</option>
-            </select>
-          </div>
-          <div class="field">
             <label for="a-why">What Is Your Goal With Dropshipping?&nbsp;<span class="req">*</span></label>
             <select class="select" data-dropdown id="a-why" name="motivation" required>
               <option value="">Select</option>
@@ -784,6 +774,16 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
               <option>📈 To build a side income next to my job or school</option>
               <option>✈️ To travel the world and have freedom</option>
               <option>🏡 To retire my parents</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="a-exp">What Is Your Experience With Dropshipping?&nbsp;<span class="req">*</span></label>
+            <select class="select" data-dropdown id="a-exp" name="experience" required>
+              <option value="">Select</option>
+              <option>Brand new, haven't started yet</option>
+              <option>I have a store but no sales yet</option>
+              <option>I've made some sales but nothing consistent</option>
+              <option>I'm making sales and want to scale</option>
             </select>
           </div>
           <div class="field">
@@ -1154,6 +1154,14 @@ $("#meter").style.setProperty("--fill", CONFIG.spotsFill + "%");
 // the page draws its own play button, progress bar, sound and full-screen buttons on top.
 const VIMEO_CLEAN = { title: 0, byline: 0, portrait: 0, badge: 0, vimeo_logo: 0, pip: 0, playsinline: 1, dnt: 1, autopause: 0 };
 const AUTOPLAY_VIDEOS = ["vsl"];   // start on their own (muted, with a "Click to listen" box), like most VSLs
+function vimeoEmbedUrl(url, custom, autoplay) {
+  const u = new URL(url);
+  if (/player\.vimeo\.com/.test(url)) {
+    const extra = custom ? { controls: 0, ...(autoplay ? { autoplay: 1, muted: 1 } : {}) } : {};
+    Object.entries({ ...VIMEO_CLEAN, ...extra }).forEach(([k, v]) => u.searchParams.set(k, v));
+  }
+  return u;
+}
 function embedVideos(page) {
   $$(".video[data-video]", page).forEach(box => {
     const url = CONFIG.videos[box.dataset.video];
@@ -1163,11 +1171,7 @@ function embedVideos(page) {
     const autoplay = AUTOPLAY_VIDEOS.includes(box.dataset.video);
     // Without the player library (e.g. the file opened from disk) Vimeo keeps its own controls.
     const custom = /player\.vimeo\.com\/video\//.test(url) && !!window.Vimeo;
-    const u = new URL(url);
-    if (/player\.vimeo\.com/.test(url)) {
-      const extra = custom ? { controls: 0, ...(autoplay ? { autoplay: 1, muted: 1 } : {}) } : {};
-      Object.entries({ ...VIMEO_CLEAN, ...extra }).forEach(([k, v]) => u.searchParams.set(k, v));
-    }
+    const u = vimeoEmbedUrl(url, custom, autoplay);
     box.innerHTML = `<iframe src="${u}" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen title="Video"${autoplay ? "" : ' loading="lazy"'}></iframe>`;
     if (custom) videoControls(box, autoplay);
   });
@@ -1302,6 +1306,34 @@ function route() {
   if (VIEW === "apply") prefillApply();
   if (VIEW === "apply2") initTypeform();
   toast.active(VIEW === "optin");
+  if (VIEW === "optin") warmUpNextPage();
+}
+
+// Page 1 quietly loads the VSL player and the booking calendar in hidden frames, 10 seconds in or as soon
+// as they start filling in the form, so both show up straight away on page 2 (the browser keeps their
+// files). It waits so it never slows down page 1 itself, and the VSL doesn't play: nothing streams yet.
+function warmUpNextPage() {
+  let done = false;
+  const warm = () => {
+    if (done) return;
+    done = true;
+    const urls = [];
+    if (CONFIG.videos.vsl) urls.push(vimeoEmbedUrl(CONFIG.videos.vsl, !!window.Vimeo, false));
+    if (CONFIG.ghlCalendarUrl) urls.push(CONFIG.ghlCalendarUrl);
+    urls.forEach(src => {
+      const f = document.createElement("iframe");
+      f.src = src;
+      f.title = "";
+      f.tabIndex = -1;
+      f.setAttribute("aria-hidden", "true");
+      f.style.cssText = "position:fixed;left:-10000px;top:0;width:640px;height:360px;opacity:0;pointer-events:none;border:0";
+      f.addEventListener("load", () => setTimeout(() => f.remove(), 8000));   // files are cached by then
+      document.body.appendChild(f);
+    });
+  };
+  const soon = () => (window.requestIdleCallback ? requestIdleCallback(warm, { timeout: 2000 }) : warm());
+  setTimeout(soon, 10000);
+  $("#optin-form").addEventListener("focusin", soon, { once: true });
 }
 
 /* ---------- One-line headings ---------- */
