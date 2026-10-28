@@ -126,6 +126,13 @@ h1, h2, h3 { position: relative; font-family: var(--display); margin: 0; text-wr
 /* Page 2: the three lines above the video are always the same size. On wide screens they share
    data-fit="intro", so when the longest one has to shrink to fit, the others shrink with it. */
 .intro { font-size: clamp(1.1rem, 2.6vw, 1.45rem); }
+/* Page 2: the hook is the main headline, and the step titles stand upright like on /booked. */
+#view-apply .step, #view-apply2 .step { font-style: normal; }
+.announce__text .hl { color: var(--accent); }
+@media (max-width: 760px) {
+  .hook { font-size: clamp(1.4rem, 6vw, 1.7rem); line-height: 1.2; }
+  #view-apply .step, #view-apply2 .step { font-size: clamp(1.02rem, 4.4vw, 1.2rem); }
+}
 .nowrap { white-space: nowrap; }
 .announce {
   margin: -14px 0 14px;   /* closer to the top of the page than the rest of the content */
@@ -761,10 +768,16 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
      PAGE 2, VERSION 1 — THANK YOU + VSL + APPLICATION FORM  (/apply)
      ===================================================================== -->
 <main class="view" id="view-apply" data-view="apply" hidden>
+  <!-- Small notice line at the very top -->
+  <div class="announce">
+    <p class="announce__text">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+      <span>Check your <span class="hl">email</span> + <span class="hl">SMS</span> for Discord access…</span>
+    </p>
+  </div>
   <div class="wrap">
 
-    <h1 class="sub intro" data-fit="intro">Check Your <span class="hl">Email</span> + <span class="hl">SMS</span> For Discord&nbsp;Access…</h1>
-    <h2 class="sub intro" data-fit="intro">Do You Want To <span class="hl">Break&nbsp;Free</span> From <span class="hl">Views That Don't&nbsp;Sell</span> &amp; <span class="hl">Products That&nbsp;Die?</span></h2>
+    <h1 class="sub intro hook" data-fit="intro">Do You Want To <span class="hl">Break&nbsp;Free</span> From <span class="hl">Views That Don't&nbsp;Sell</span> &amp; <span class="hl">Products That&nbsp;Die?</span></h1>
     <h2 class="step intro" data-fit="intro"><b>Step #1</b> Watch This Video To See How I Went From <b>$16/hr</b> To <b>$10K In 3&nbsp;Days</b>.</h2>
 
     <div class="video" data-video="vsl">
@@ -870,10 +883,16 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
      Questions live in APPLY2_QUESTIONS in the script below.
      ===================================================================== -->
 <main class="view" id="view-apply2" data-view="apply2" hidden>
+  <!-- Small notice line at the very top -->
+  <div class="announce">
+    <p class="announce__text">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+      <span>Check your <span class="hl">email</span> + <span class="hl">SMS</span> for Discord access…</span>
+    </p>
+  </div>
   <div class="wrap">
 
-    <h1 class="sub intro" data-fit="intro">Check Your <span class="hl">Email</span> + <span class="hl">SMS</span> For Discord&nbsp;Access…</h1>
-    <h2 class="sub intro" data-fit="intro">Do You Want To <span class="hl">Break&nbsp;Free</span> From <span class="hl">Views That Don't&nbsp;Sell</span> &amp; <span class="hl">Products That&nbsp;Die?</span></h2>
+    <h1 class="sub intro hook" data-fit="intro">Do You Want To <span class="hl">Break&nbsp;Free</span> From <span class="hl">Views That Don't&nbsp;Sell</span> &amp; <span class="hl">Products That&nbsp;Die?</span></h1>
     <h2 class="step intro" data-fit="intro"><b>Step #1</b> Watch This Video To See How I Went From <b>$16/hr</b> To <b>$10K In 3&nbsp;Days</b>.</h2>
 
     <div class="video" data-video="vsl">
