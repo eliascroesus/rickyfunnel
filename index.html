@@ -1482,10 +1482,19 @@ optinForm.addEventListener("input", saveDraft);
   if (!f.phone.value && saved.phone) f.phone.value = saved.phone;
 })();
 
+// "jordan lee" or "JORDAN LEE" → "Jordan Lee", so emails say "Hey Jordan". Names typed with their own
+// capitals ("McKenzie", "de la Cruz") are left exactly as typed.
+function tidyName(raw) {
+  const name = raw.trim().replace(/\s+/g, " ");
+  if (name !== name.toLowerCase() && name !== name.toUpperCase()) return name;
+  return name.toLowerCase().replace(/(^|[\s\-'’])(\p{L})/gu, (m, sep, ch) => sep + ch.toUpperCase());
+}
+
 optinForm.addEventListener("submit", e => {
   e.preventDefault();
   const f = e.currentTarget;
-  const name = f.name.value.trim(), email = f.email.value.trim();
+  f.name.value = tidyName(f.name.value);
+  const name = f.name.value, email = f.email.value.trim();
   const phone = checkPhoneField(true), country = phoneCountry();
   const bad = [];
   f.name.setAttribute("aria-invalid", !name); if (!name) bad.push("your name");
