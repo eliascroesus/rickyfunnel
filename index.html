@@ -128,33 +128,41 @@ h1, h2, h3 { position: relative; font-family: var(--display); margin: 0; text-wr
 .intro { font-size: clamp(1.1rem, 2.6vw, 1.45rem); }
 .nowrap { white-space: nowrap; }
 .announce {
-  position: sticky; top: 0; z-index: 40;
+  position: relative; z-index: 1;
   margin: -28px 0 28px;   /* flush with the top of the page (cancels .view's top padding) */
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 18px;
-  padding: 9px var(--gutter-r) 10px var(--gutter-l);
-  background: linear-gradient(180deg, #ffd84d, #f2b51b);
-  color: #231a00;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, .35);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 14px;
+  padding: 6px var(--gutter-r) 7px var(--gutter-l);
+  background: #f3c447;
+  color: #2b2100;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .2);
 }
 .announce__text {
   display: inline-flex; align-items: center; gap: 8px;
-  font-size: clamp(.82rem, 2.2vw, .98rem); font-weight: 800; line-height: 1.2;
+  font-size: .8rem; font-weight: 700; line-height: 1.2;
   text-transform: uppercase; letter-spacing: .02em;
 }
 .announce__text svg { flex: none; width: 1.3em; height: 1.3em; }
 .announce__text u { text-decoration-thickness: 2px; text-underline-offset: 3px; }
-.announce__progress { display: flex; align-items: center; gap: 8px; width: min(240px, 100%); }
-.announce__track { flex: 1; height: 10px; border-radius: 999px; background: rgba(35, 26, 0, .18); overflow: hidden; }
+.announce__progress { display: flex; align-items: center; gap: 7px; width: min(200px, 100%); }
+.announce__track { flex: 1; height: 7px; border-radius: 999px; background: rgba(43, 33, 0, .14); overflow: hidden; }
 .announce__track span {
   display: block; height: 100%; width: 75%; border-radius: inherit;
-  background: repeating-linear-gradient(-45deg, #231a00 0 8px, #4d3b00 8px 16px);
+  background: repeating-linear-gradient(-45deg, rgba(43, 33, 0, .78) 0 8px, rgba(43, 33, 0, .62) 8px 16px);
   background-size: 22.63px 100%;   /* one stripe period across, so the stripes loop seamlessly */
-  animation: announce-fill 1.4s cubic-bezier(.2, .7, .2, 1), announce-stripes 1s linear infinite;
+  animation: announce-fill 1.4s cubic-bezier(.2, .7, .2, 1), announce-stripes 2s linear infinite;
 }
-.announce__progress b { flex: none; font-family: var(--display); font-size: .78rem; font-weight: 800; }
+.announce__progress b { flex: none; font-family: var(--display); font-size: .7rem; font-weight: 700; opacity: .85; }
 @keyframes announce-fill { from { width: 0; } }
 @keyframes announce-stripes { to { background-position: 22.63px 0; } }
 @media (prefers-reduced-motion: reduce) { .announce__track span { animation: none; } }
+/* Phones: tighter and smaller, so the bar takes as little of the screen as possible. */
+@media (max-width: 560px) {
+  .announce { gap: 3px 10px; padding-top: 5px; padding-bottom: 6px; }
+  .announce__text { font-size: min(.7rem, 3.3vw); gap: 5px; }
+  .announce__progress { width: min(170px, 100%); gap: 6px; }
+  .announce__track { height: 5px; }
+  .announce__progress b { font-size: .64rem; }
+}
 
 /* ---------- Scarcity bar ---------- */
 .scarcity {
@@ -934,7 +942,7 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
   <!-- Announcement bar: stays at the top while they scroll -->
   <div class="announce">
     <h1 class="announce__text">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 1 21h22L12 2z" fill="currentColor"/><path d="M12 9v5m0 3v.5" stroke="#ffd84d" stroke-width="2.4" stroke-linecap="round"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 1 21h22L12 2z" fill="currentColor"/><path d="M12 9v5m0 3v.5" stroke="#f3c447" stroke-width="2.4" stroke-linecap="round"/></svg>
       <span>Wait! Your call is <u>not</u> confirmed yet…</span>
     </h1>
     <div class="announce__progress" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" aria-label="Booking 75% complete">
