@@ -573,9 +573,9 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
 }
 /* Twice the usual space between the buttons and the Step #2 title. */
 .confirm { margin-bottom: 28px; }
-/* Phones: push Step #2 down to the bottom edge of the first screen, so the thank-you video and the
-   buttons have the screen to themselves (the Step #2 title just peeks in to show there's more). */
-@media (max-width: 560px) { .confirm { margin-bottom: max(56px, calc(100svh - 500px)); } }
+/* Phones: extra room under the buttons (grows with the screen height), so the thank-you video and the
+   buttons stand out on the first screen before Step #2 starts. */
+@media (max-width: 560px) { .confirm { margin-bottom: max(56px, calc((100svh - 500px) * .6)); } }
 
 .confirm__btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
@@ -1356,7 +1356,13 @@ function route() {
 function setupConfirmButton() {
   const email = (lead.email || "").trim().toLowerCase(), domain = email.split("@")[1] || "";
   const search = encodeURIComponent("in:anywhere from:" + CONFIG.confirmFrom).replace(/%20/g, "+");
-  $("#confirm-gmail").href = "https://mail.google.com/mail/" + (email ? "?authuser=" + encodeURIComponent(email) : "u/0/") + "#search/" + search;
+  const gmail = "https://mail.google.com/mail/" + (email ? "?authuser=" + encodeURIComponent(email) : "u/0/") + "#search/" + search;
+  // Through Google's sign-in, because a plain link loses the "#search/…" part when someone has to log in
+  // first (common on phones). Google keeps it inside "continue" and sends them on after sign-in; anyone
+  // already signed in goes straight through (passive=true). Email picks the account to sign in with.
+  $("#confirm-gmail").href = "https://accounts.google.com/ServiceLogin?" + new URLSearchParams({
+    service: "mail", passive: "true", ...(email ? { Email: email } : {}), continue: gmail,
+  });
   const personal = !domain || /^(outlook|hotmail|live|msn)\./.test(domain) || /^(gmail|googlemail|yahoo|icloud|me|mac|aol|proton)\./.test(domain);
   $("#confirm-outlook").href = personal ? "https://outlook.live.com/mail/0/" : "https://outlook.office.com/mail/";
 }
