@@ -1861,7 +1861,9 @@ function initCalendar(el) {
     // GHL fills its booking form from these when the calendar has "pre-populate fields" on.
     const u = new URL(CONFIG.ghlCalendarUrl);
     const phone = (lead.phone || "").replace(/[^\d+]/g, "");
-    Object.entries({ first_name: prefill.firstName, last_name: prefill.lastName, name: prefill.name, email: prefill.email, phone })
+    // The calendar's form requires a last name; someone who only gave a first name gets "-" so they
+    // don't get stuck on it (it only shows as "Jordan -" on the contact in GHL).
+    Object.entries({ first_name: prefill.firstName, last_name: prefill.lastName || (prefill.firstName ? "-" : ""), name: prefill.name, email: prefill.email, phone })
       .forEach(([k, v]) => { if (v) u.searchParams.set(k, v); });
     el.innerHTML = `<iframe src="${u}" title="Book your call" allow="payment" scrolling="yes" style="width:100%;height:100%;border:0;overflow:auto"></iframe>`;
     return;
