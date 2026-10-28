@@ -1124,9 +1124,11 @@ const CONFIG = {
   // Discord invite link for the button on /not-qualified. Leave "" to tell them to check their email + SMS.
   discordUrl: "https://discord.gg/G259ppJKRA",
 
-  // The address the GHL confirmation email comes from: the "Confirm Your Call" button on /booked
-  // opens their inbox searching for it (spam and promotions included).
+  // How the "Confirm In Gmail" button on /booked finds the booking confirmation email (spam and
+  // promotions included): anything from this address, OR anything with these words in the subject.
+  // Keep the words in the subject of the calendar's confirmation email.
   confirmFrom: "ricky@ytd.rickyshoffner.com",
+  confirmSubject: "Strategy Call",
 
   // GoHighLevel calendar shown on page 2: the calendar's booking link, e.g.
   // "https://api.leadconnectorhq.com/widget/booking/AbC123…" (Calendars → the calendar's ⋮ → Share → Permanent link).
@@ -1383,7 +1385,8 @@ function route() {
 // search, so it opens their inbox: Outlook.com for personal addresses, Microsoft 365 for work ones.
 function setupConfirmButton() {
   const email = (lead.email || "").trim().toLowerCase(), domain = email.split("@")[1] || "";
-  const search = encodeURIComponent("in:anywhere from:" + CONFIG.confirmFrom).replace(/%20/g, "+");
+  // { } is Gmail's OR: from our address, or the confirmation's subject words (whoever sent it).
+  const search = encodeURIComponent(`in:anywhere {from:${CONFIG.confirmFrom} subject:"${CONFIG.confirmSubject}"}`).replace(/%20/g, "+");
   const gmail = "https://mail.google.com/mail/" + (email ? "?authuser=" + encodeURIComponent(email) : "u/0/") + "#search/" + search;
   // Through Google's sign-in, because a plain link loses the "#search/…" part when someone has to log in
   // first (common on phones). Google keeps it inside "continue" and sends them on after sign-in; anyone
