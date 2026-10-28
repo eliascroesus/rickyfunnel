@@ -147,6 +147,8 @@ h1, h2, h3 { position: relative; font-family: var(--display); margin: 0; text-wr
 }
 .announce__text svg { flex: none; width: 1.3em; height: 1.3em; }
 .announce__text u { text-decoration-thickness: 2px; text-underline-offset: 3px; }
+/* Desktop: the /booked warning is bigger so it can't be missed. */
+@media (min-width: 761px) { #view-booked .announce { margin: -8px 0 8px; } #view-booked .announce__text { font-size: 1.1rem; gap: 10px; } }
 @media (max-width: 560px) {
   .announce { margin-top: -4px; }
   .announce__text { font-size: min(.7rem, 3.3vw); gap: 5px; }
