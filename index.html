@@ -127,17 +127,34 @@ h1, h2, h3 { position: relative; font-family: var(--display); margin: 0; text-wr
    data-fit="intro", so when the longest one has to shrink to fit, the others shrink with it. */
 .intro { font-size: clamp(1.1rem, 2.6vw, 1.45rem); }
 .nowrap { white-space: nowrap; }
-.warn {
-  display: inline-flex; align-items: center; gap: 10px;
-  font-size: clamp(1.05rem, 2.6vw, 1.5rem);
-  font-weight: 800;
-  font-style: italic;
-  text-transform: uppercase;
-  letter-spacing: .01em;
+.announce {
+  position: sticky; top: 0; z-index: 40;
+  margin: -28px 0 28px;   /* flush with the top of the page (cancels .view's top padding) */
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 18px;
+  padding: 9px var(--gutter-r) 10px var(--gutter-l);
+  background: linear-gradient(180deg, #ffd84d, #f2b51b);
+  color: #231a00;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .35);
 }
-.warn span { text-align: center; }
-.warn svg { flex: none; width: 1.3em; height: 1.3em; color: var(--gold); }
-.warn u { text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.announce__text {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: clamp(.82rem, 2.2vw, .98rem); font-weight: 800; line-height: 1.2;
+  text-transform: uppercase; letter-spacing: .02em;
+}
+.announce__text svg { flex: none; width: 1.3em; height: 1.3em; }
+.announce__text u { text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.announce__progress { display: flex; align-items: center; gap: 8px; width: min(240px, 100%); }
+.announce__track { flex: 1; height: 10px; border-radius: 999px; background: rgba(35, 26, 0, .18); overflow: hidden; }
+.announce__track span {
+  display: block; height: 100%; width: 75%; border-radius: inherit;
+  background: repeating-linear-gradient(-45deg, #231a00 0 8px, #4d3b00 8px 16px);
+  background-size: 22.63px 100%;   /* one stripe period across, so the stripes loop seamlessly */
+  animation: announce-fill 1.4s cubic-bezier(.2, .7, .2, 1), announce-stripes 1s linear infinite;
+}
+.announce__progress b { flex: none; font-family: var(--display); font-size: .78rem; font-weight: 800; }
+@keyframes announce-fill { from { width: 0; } }
+@keyframes announce-stripes { to { background-position: 22.63px 0; } }
+@media (prefers-reduced-motion: reduce) { .announce__track span { animation: none; } }
 
 /* ---------- Scarcity bar ---------- */
 .scarcity {
@@ -914,12 +931,18 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
      PAGE 3 — POST-BOOKING  (/booked)
      ===================================================================== -->
 <main class="view" id="view-booked" data-view="booked" hidden>
-  <div class="wrap">
-
-    <h1 class="warn">
-      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2 1 21h22L12 2z"/><path d="M12 9v5m0 3v.5" stroke="#04060c" stroke-width="2.4" stroke-linecap="round"/></svg>
-      <span>Wait your call is <u>not</u> confirmed yet…</span>
+  <!-- Announcement bar: stays at the top while they scroll -->
+  <div class="announce">
+    <h1 class="announce__text">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 1 21h22L12 2z" fill="currentColor"/><path d="M12 9v5m0 3v.5" stroke="#ffd84d" stroke-width="2.4" stroke-linecap="round"/></svg>
+      <span>Wait! Your call is <u>not</u> confirmed yet…</span>
     </h1>
+    <div class="announce__progress" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" aria-label="Booking 75% complete">
+      <div class="announce__track"><span></span></div>
+      <b>75% done</b>
+    </div>
+  </div>
+  <div class="wrap">
 
     <h2 class="step" data-fit="booked"><b>Step #1:</b> Watch This <span class="hl">2&#8209;Minute</span> Video For Next Steps</h2>
 
