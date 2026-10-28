@@ -556,17 +556,23 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
 @media (max-width: 560px) { .tf__body { padding-left: 0; } }
 
 /* ---------- Booked ---------- */
-.booking {
-  width: 100%; max-width: 620px;
-  display: flex; gap: 14px; align-items: center;
-  background: rgba(255, 255, 255, .06);
-  border: 1px solid rgba(255, 255, 255, .14);
-  border-radius: 14px; padding: 14px 16px;
+#view-booked .step { font-size: clamp(1.3rem, 3.4vw, 2.05rem); }
+/* The thank-you video is 4:3, so it gets a narrower box to stay a sensible height. */
+.video[data-video="nextSteps"] { aspect-ratio: 4 / 3; max-width: 680px; }
+.confirm { width: 100%; display: grid; justify-items: center; gap: 10px; }
+.confirm__btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+  width: 100%; max-width: 420px; padding: 16px 22px;
+  border-radius: 14px; background: #fff; color: #1f1f1f; text-decoration: none;
+  font-family: var(--display); font-weight: 800; font-size: clamp(1.05rem, 2.6vw, 1.2rem);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .35);
+  transition: transform .15s ease, box-shadow .15s ease;
 }
-.booking svg { flex: none; width: 34px; height: 34px; color: var(--accent); }
-.booking div { min-width: 0; }
-.booking strong { display: block; font-family: var(--display); font-size: 1rem; }
-.booking span { color: var(--muted); font-size: .88rem; }
+.confirm__btn:hover { transform: translateY(-1px); box-shadow: 0 14px 34px rgba(0, 0, 0, .45); }
+.confirm__btn svg { flex: none; width: 30px; height: 30px; }
+.confirm__mail { color: var(--deep); }
+.confirm__hint { max-width: 420px; margin: 0; text-align: center; color: var(--muted); font-size: .85rem; }
+.confirm__hint b { color: #fff; }
 .faq { width: 100%; display: grid; gap: 14px; justify-items: center; }
 .faq h3 { font-size: clamp(1.2rem, 3vw, 1.7rem); font-weight: 800; }
 .faqs { width: 100%; display: grid; gap: 40px; }
@@ -917,14 +923,6 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
       <span>Wait your call is <u>not</u> confirmed yet…</span>
     </h1>
 
-    <div class="booking" id="booking">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
-      <div>
-        <strong id="booking-when">Your call is booked</strong>
-        <span id="booking-who"><span data-fill="brand">Ricky</span> Strategy Call · a calendar invite is on its way</span>
-      </div>
-    </div>
-
     <h2 class="step"><b>Step #1:</b> Watch This 2 Minute Video For Next Steps</h2>
 
     <div class="video" data-video="nextSteps">
@@ -939,6 +937,16 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
         <span>Click to listen</span>
       </button>
       <div class="video__bar"><span></span></div>
+    </div>
+
+    <!-- Opens their inbox at the confirmation email (spam included). The link is set in the script from their email. -->
+    <div class="confirm">
+      <a class="confirm__btn" id="confirm-mail" href="https://mail.google.com/mail/u/0/#search/in%3Aanywhere+from%3Aricky%40ytd.rickyshoffner.com" target="_blank" rel="noopener">
+        <svg class="confirm__gmail" viewBox="52 42 88 66" aria-hidden="true"><path fill="#4285f4" d="M58 108h14V74L52 59v43c0 3.32 2.69 6 6 6"/><path fill="#34a853" d="M120 108h14c3.32 0 6-2.69 6-6V59l-20 15"/><path fill="#fbbc04" d="M120 48v26l20-15v-8c0-7.42-8.47-11.65-14.4-7.2"/><path fill="#ea4335" d="M72 74V48l24 18 24-18v26L96 92"/><path fill="#c5221f" d="M52 51v8l20 15V48l-5.6-4.2c-5.94-4.45-14.4-.22-14.4 7.2"/></svg>
+        <svg class="confirm__mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+        <span>Confirm Your Call</span>
+      </a>
+      <p class="confirm__hint" id="confirm-hint">Opens your inbox at our confirmation email. Not there? Check <b>Spam</b> or <b>Promotions</b> and mark it "Not spam".</p>
     </div>
 
     <h2 class="step"><b>Step #2:</b> Go Through Our FAQs</h2>
@@ -1058,7 +1066,7 @@ const CONFIG = {
   // Vimeo links get the player's title, profile picture, name and logo turned off automatically.
   videos: {
     vsl: "https://player.vimeo.com/video/1239908541",
-    nextSteps: "",
+    nextSteps: "https://player.vimeo.com/video/1240193952",   // thank-you video on /booked (4:3)
     faqInside: "https://player.vimeo.com/video/1239910534",
     faqLegit: "https://player.vimeo.com/video/1239910539",
     faqWho: "https://player.vimeo.com/video/1239913798",
@@ -1076,6 +1084,10 @@ const CONFIG = {
 
   // Discord invite link for the button on /not-qualified. Leave "" to tell them to check their email + SMS.
   discordUrl: "",
+
+  // The address the GHL confirmation email comes from: the "Confirm Your Call" button on /booked
+  // opens their inbox searching for it (spam and promotions included).
+  confirmFrom: "ricky@ytd.rickyshoffner.com",
 
   // GoHighLevel calendar shown on page 2: the calendar's booking link, e.g.
   // "https://api.leadconnectorhq.com/widget/booking/AbC123…" (Calendars → the calendar's ⋮ → Share → Permanent link).
@@ -1153,7 +1165,7 @@ $("#meter").style.setProperty("--fill", CONFIG.spotsFill + "%");
 // Vimeo videos play with no Vimeo controls at all (no title, name, picture, logo or share buttons):
 // the page draws its own play button, progress bar, sound and full-screen buttons on top.
 const VIMEO_CLEAN = { title: 0, byline: 0, portrait: 0, badge: 0, vimeo_logo: 0, pip: 0, playsinline: 1, dnt: 1, autopause: 0 };
-const AUTOPLAY_VIDEOS = ["vsl"];   // start on their own (muted, with a "Click to listen" box), like most VSLs
+const AUTOPLAY_VIDEOS = ["vsl", "nextSteps"];   // start on their own (muted, with a "Click to listen" box), like most VSLs
 function vimeoEmbedUrl(url, custom, autoplay) {
   const u = new URL(url);
   if (/player\.vimeo\.com/.test(url)) {
@@ -1307,19 +1319,43 @@ function route() {
   if (VIEW === "apply2") initTypeform();
   toast.active(VIEW === "optin");
   if (VIEW === "optin") warmUpNextPage();
+  if (VIEW === "apply" || VIEW === "apply2") warmUpNextPage([CONFIG.videos.nextSteps], false);
+  if (VIEW === "booked") setupConfirmButton();
+}
+
+// "Confirm Your Call" opens their own inbox searching for the confirmation email, spam included.
+// Gmail (and Google Workspace) addresses go to Gmail in their own account (authuser picks it when
+// several are signed in); Outlook, Yahoo and iCloud addresses go to those inboxes instead.
+function setupConfirmButton() {
+  const btn = $("#confirm-mail"), hint = $("#confirm-hint");
+  const email = (lead.email || "").trim().toLowerCase(), domain = email.split("@")[1] || "";
+  const from = CONFIG.confirmFrom;
+  const others = [
+    [/^(outlook|hotmail|live|msn)\./, "https://outlook.live.com/mail/0/junkemail", "Outlook"],
+    [/^(yahoo|ymail|rocketmail)\./, "https://mail.yahoo.com/", "Yahoo Mail"],
+    [/^(icloud|me|mac)\.com$/, "https://www.icloud.com/mail/", "iCloud Mail"],
+  ].find(([re]) => re.test(domain));
+  if (others) {
+    btn.href = others[1];
+    $(".confirm__gmail", btn).hidden = true;
+    $(".confirm__mail", btn).hidden = false;
+    hint.innerHTML = `Opens ${others[2]}. Look for the email from <b>${from}</b>, and check <b>Junk</b>/<b>Spam</b> too.`;
+    return;
+  }
+  const search = encodeURIComponent("in:anywhere from:" + from).replace(/%20/g, "+");
+  btn.href = "https://mail.google.com/mail/" + (email ? "?authuser=" + encodeURIComponent(email) : "u/0/") + "#search/" + search;
 }
 
 // Page 1 quietly loads the VSL player and the booking calendar in hidden frames, 10 seconds in or as soon
 // as they start filling in the form, so both show up straight away on page 2 (the browser keeps their
-// files). It waits so it never slows down page 1 itself, and the VSL doesn't play: nothing streams yet.
-function warmUpNextPage() {
+// files). Page 2 does the same for the thank-you video on /booked. It waits so it never slows down the
+// page itself, and nothing plays: no video streams yet.
+function warmUpNextPage(videos = [CONFIG.videos.vsl, CONFIG.ghlCalendarUrl], onForm = true) {
   let done = false;
   const warm = () => {
     if (done) return;
     done = true;
-    const urls = [];
-    if (CONFIG.videos.vsl) urls.push(vimeoEmbedUrl(CONFIG.videos.vsl, !!window.Vimeo, false));
-    if (CONFIG.ghlCalendarUrl) urls.push(CONFIG.ghlCalendarUrl);
+    const urls = videos.filter(Boolean).map(url => /player\.vimeo\.com/.test(url) ? vimeoEmbedUrl(url, !!window.Vimeo, false) : url);
     urls.forEach(src => {
       const f = document.createElement("iframe");
       f.src = src;
@@ -1333,7 +1369,7 @@ function warmUpNextPage() {
   };
   const soon = () => (window.requestIdleCallback ? requestIdleCallback(warm, { timeout: 2000 }) : warm());
   setTimeout(soon, 10000);
-  $("#optin-form").addEventListener("focusin", soon, { once: true });
+  if (onForm) $("#optin-form").addEventListener("focusin", soon, { once: true });
 }
 
 /* ---------- One-line headings ---------- */
