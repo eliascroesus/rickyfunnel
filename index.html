@@ -573,6 +573,9 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
 }
 /* Twice the usual space between the buttons and the Step #2 title. */
 .confirm { margin-bottom: 28px; }
+/* Phones: push Step #2 down to the bottom edge of the first screen, so the thank-you video and the
+   buttons have the screen to themselves (the Step #2 title just peeks in to show there's more). */
+@media (max-width: 560px) { .confirm { margin-bottom: max(56px, calc(100svh - 500px)); } }
 
 .confirm__btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
@@ -1218,7 +1221,12 @@ const players = [];
 function videoControls(box, autoplay) {
   const player = new Vimeo.Player(box.querySelector("iframe"));
   players.push(player);
-  player.ready().then(() => player.disableTextTrack()).catch(() => {});   // no Vimeo captions
+  // No Vimeo captions: switched off when the player is ready, when the video loads and starts, and again if
+  // Vimeo turns a caption track on by itself (e.g. "captions on by default" in the video's Vimeo settings).
+  const noCaptions = () => player.disableTextTrack().catch(() => {});
+  player.ready().then(noCaptions).catch(() => {});
+  ["loaded", "play"].forEach(ev => player.on(ev, noCaptions));
+  player.on("texttrackchange", d => { if (d && (d.language || d.kind)) noCaptions(); });
   // The clear layer on top keeps the mouse off Vimeo's own player, so its buttons never show up.
   box.insertAdjacentHTML("beforeend", `
     <button class="vp__hit" type="button" aria-label="Play or pause"></button>
