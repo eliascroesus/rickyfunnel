@@ -128,13 +128,10 @@ h1, h2, h3 { position: relative; font-family: var(--display); margin: 0; text-wr
 .intro { font-size: clamp(1.1rem, 2.6vw, 1.45rem); }
 .nowrap { white-space: nowrap; }
 .announce {
-  position: relative; z-index: 1;
-  margin: -28px 0 28px;   /* flush with the top of the page (cancels .view's top padding) */
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 14px;
-  padding: 6px var(--gutter-r) 7px var(--gutter-l);
-  background: #f3c447;
-  color: #2b2100;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, .2);
+  margin: -14px 0 14px;   /* closer to the top of the page than the rest of the content */
+  display: flex; justify-content: center;
+  padding: 0 var(--gutter-r) 0 var(--gutter-l);
+  color: #fff;
 }
 .announce__text {
   display: inline-flex; align-items: center; gap: 8px;
@@ -143,25 +140,8 @@ h1, h2, h3 { position: relative; font-family: var(--display); margin: 0; text-wr
 }
 .announce__text svg { flex: none; width: 1.3em; height: 1.3em; }
 .announce__text u { text-decoration-thickness: 2px; text-underline-offset: 3px; }
-.announce__progress { display: flex; align-items: center; gap: 7px; width: min(200px, 100%); }
-.announce__track { flex: 1; height: 7px; border-radius: 999px; background: rgba(43, 33, 0, .14); overflow: hidden; }
-.announce__track span {
-  display: block; height: 100%; width: 75%; border-radius: inherit;
-  background: repeating-linear-gradient(-45deg, rgba(43, 33, 0, .78) 0 8px, rgba(43, 33, 0, .62) 8px 16px);
-  background-size: 22.63px 100%;   /* one stripe period across, so the stripes loop seamlessly */
-  animation: announce-fill 1.4s cubic-bezier(.2, .7, .2, 1), announce-stripes 2s linear infinite;
-}
-.announce__progress b { flex: none; font-family: var(--display); font-size: .7rem; font-weight: 700; opacity: .85; }
-@keyframes announce-fill { from { width: 0; } }
-@keyframes announce-stripes { to { background-position: 22.63px 0; } }
-@media (prefers-reduced-motion: reduce) { .announce__track span { animation: none; } }
-/* Phones: tighter and smaller, so the bar takes as little of the screen as possible. */
 @media (max-width: 560px) {
-  .announce { gap: 3px 10px; padding-top: 5px; padding-bottom: 6px; }
   .announce__text { font-size: min(.7rem, 3.3vw); gap: 5px; }
-  .announce__progress { width: min(170px, 100%); gap: 6px; }
-  .announce__track { height: 5px; }
-  .announce__progress b { font-size: .64rem; }
 }
 
 /* ---------- Scarcity bar ---------- */
@@ -594,10 +574,9 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
 .confirm__btn:hover { transform: translateY(-1px); box-shadow: 0 14px 34px rgba(0, 0, 0, .45); }
 .confirm__btn svg { flex: none; width: 30px; height: 30px; }
 .confirm__mail { color: var(--deep); }
-.confirm__hint { max-width: 420px; margin: 0; text-align: center; color: var(--muted); font-size: .85rem; }
-.confirm__hint b { color: #fff; }
 .faq { width: 100%; display: grid; gap: 14px; justify-items: center; }
 .faq h3 { font-size: clamp(1.2rem, 3vw, 1.7rem); font-weight: 500; }
+@media (max-width: 560px) { .faq h3 { font-size: calc(1.2rem - 2px); } }
 .faqs { width: 100%; display: grid; gap: 40px; }
 
 /* ---------- Booked: video testimonials + screenshot feed ---------- */
@@ -939,16 +918,12 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
      PAGE 3 — POST-BOOKING  (/booked)
      ===================================================================== -->
 <main class="view" id="view-booked" data-view="booked" hidden>
-  <!-- Announcement bar: stays at the top while they scroll -->
+  <!-- Small announcement line at the very top -->
   <div class="announce">
     <h1 class="announce__text">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 1 21h22L12 2z" fill="currentColor"/><path d="M12 9v5m0 3v.5" stroke="#f3c447" stroke-width="2.4" stroke-linecap="round"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 1 21h22L12 2z" fill="var(--gold)"/><path d="M12 9v5m0 3v.5" stroke="#04060c" stroke-width="2.4" stroke-linecap="round"/></svg>
       <span>Wait! Your call is <u>not</u> confirmed yet…</span>
     </h1>
-    <div class="announce__progress" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" aria-label="Booking 75% complete">
-      <div class="announce__track"><span></span></div>
-      <b>75% done</b>
-    </div>
   </div>
   <div class="wrap">
 
@@ -975,7 +950,6 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
         <svg class="confirm__mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
         <span>Confirm Your Call</span>
       </a>
-      <p class="confirm__hint" id="confirm-hint">Opens your inbox at our confirmation email. Not there? Check <b>Spam</b> or <b>Promotions</b> and mark it "Not spam".</p>
     </div>
 
     <h2 class="step" data-fit="booked"><b>Step #2:</b> Go Through Our FAQs</h2>
@@ -1356,7 +1330,7 @@ function route() {
 // Gmail (and Google Workspace) addresses go to Gmail in their own account (authuser picks it when
 // several are signed in); Outlook, Yahoo and iCloud addresses go to those inboxes instead.
 function setupConfirmButton() {
-  const btn = $("#confirm-mail"), hint = $("#confirm-hint");
+  const btn = $("#confirm-mail");
   const email = (lead.email || "").trim().toLowerCase(), domain = email.split("@")[1] || "";
   const from = CONFIG.confirmFrom;
   const others = [
@@ -1368,11 +1342,20 @@ function setupConfirmButton() {
     btn.href = others[1];
     $(".confirm__gmail", btn).hidden = true;
     $(".confirm__mail", btn).hidden = false;
-    hint.innerHTML = `Opens ${others[2]}. Look for the email from <b>${from}</b>, and check <b>Junk</b>/<b>Spam</b> too.`;
     return;
   }
   const search = encodeURIComponent("in:anywhere from:" + from).replace(/%20/g, "+");
   btn.href = "https://mail.google.com/mail/" + (email ? "?authuser=" + encodeURIComponent(email) : "u/0/") + "#search/" + search;
+  // iPhone/iPad: a mail.google.com link opens Safari, not the Gmail app, so try the app first
+  // (googlegmail://) and fall back to Gmail on the web if it isn't installed. Android already
+  // offers the Gmail app for mail.google.com links.
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if (ios) btn.addEventListener("click", e => {
+    e.preventDefault();
+    const fallback = setTimeout(() => { if (document.visibilityState === "visible") location.href = btn.href; }, 1500);
+    document.addEventListener("visibilitychange", () => clearTimeout(fallback), { once: true });
+    location.href = "googlegmail://";
+  });
 }
 
 // Page 1 quietly loads the VSL player and the booking calendar in hidden frames, 10 seconds in or as soon
