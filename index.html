@@ -1132,9 +1132,17 @@ const APPLY2_QUESTIONS = [
 /* ======================================================================= */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+// Saved in the browser for 30 days, so a reload or coming back later in a new tab keeps what they entered.
+const STORE_DAYS = 30;
 const store = {
-  get(k) { try { return JSON.parse(sessionStorage.getItem(k)); } catch { return null; } },
-  set(k, v) { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch {} }
+  get(k) {
+    try {
+      const saved = JSON.parse(localStorage.getItem("ricky_" + k));
+      if (saved && Date.now() - saved.at < STORE_DAYS * 864e5) return saved.v;
+      return JSON.parse(sessionStorage.getItem(k));   // from before this was kept in localStorage
+    } catch { return null; }
+  },
+  set(k, v) { try { localStorage.setItem("ricky_" + k, JSON.stringify({ v, at: Date.now() })); } catch {} }
 };
 
 // Fill brand / program / spots text
@@ -1326,6 +1334,18 @@ document.fonts?.ready.then(fitHeadings);   // web fonts are wider than the fallb
 /* ---------- Lead data (opt-in → application prefill) ---------- */
 let lead = store.get("lead") || {};
 const qs = new URLSearchParams(location.search);   // UTM-style prefill: ?name=&email=&phone=
+// UTMs (from the latest link that had them) and the referring site are remembered, so they still reach
+// the sheet if the person reloads, or comes back later without the ?utm_… in the link.
+const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
+const tracking = (() => {
+  const saved = store.get("tracking") || {};
+  const fromLink = Object.fromEntries(UTM_KEYS.map(k => [k, qs.get(k) || ""]).filter(([, v]) => v));
+  const external = document.referrer && new URL(document.referrer).host !== location.host ? document.referrer : "";
+  const now = { ...(Object.keys(fromLink).length ? fromLink : pickUtms(saved)), referrer: external || saved.referrer || "" };
+  store.set("tracking", now);
+  return now;
+  function pickUtms(o) { return Object.fromEntries(UTM_KEYS.map(k => [k, o[k] || ""]).filter(([, v]) => v)); }
+})();
 ["name", "email", "phone"].forEach(k => { const v = qs.get(k) || (k === "name" && qs.get("first_name")); if (v) lead[k] = v; });
 
 function prefillApply() {
@@ -1343,12 +1363,8 @@ function sendLead(data, type = "optin") {
     type,
     funnel: document.title,
     page_url: location.href.split("#")[0],
-    utm_source: qs.get("utm_source") || "",
-    utm_medium: qs.get("utm_medium") || "",
-    utm_campaign: qs.get("utm_campaign") || "",
-    utm_content: qs.get("utm_content") || "",
-    utm_term: qs.get("utm_term") || "",
-    referrer: document.referrer,
+    ...Object.fromEntries(UTM_KEYS.map(k => [k, tracking[k] || ""])),
+    referrer: tracking.referrer || document.referrer,
     device: /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? "Mobile" : "Desktop",
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || ""
   });
@@ -1358,20 +1374,100 @@ function sendLead(data, type = "optin") {
 
 /* ---------- Opt-in form ---------- */
 const emailOk = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-$("#optin-form").addEventListener("submit", e => {
+
+// Phone rules per country in the dropdown: the national number (no country code, no leading 0),
+// what a real number there looks like, and how to show it. A typed "+44…" or leading 0 is understood too.
+const PHONE_RULES = {
+  // US & Canada: always 10 digits; area code and exchange can't start with 0 or 1.
+  US: { code: "1", re: /^[2-9]\d{2}[2-9]\d{6}$/, hint: "10 digits, like 201 555 0123", fmt: [3, 3, 4] },
+  CA: { code: "1", re: /^[2-9]\d{2}[2-9]\d{6}$/, hint: "10 digits, like 416 555 0123", fmt: [3, 3, 4] },
+  // UK: 10 digits after the 0 (mobiles 07…); a few older landlines have 9.
+  GB: { code: "44", re: /^(7\d{9}|1\d{8,9}|[23589]\d{9})$/, hint: "like 07700 900123", fmt: [4, 6] },
+  // Australia: 9 digits after the 0 (mobiles 04…).
+  AU: { code: "61", re: /^[23478]\d{8}$/, hint: "like 0412 345 678", fmt: [3, 3, 3] },
+  // Germany: mobiles 015…/016…/017… have 10–11 digits after the 0; landlines 6–11.
+  DE: { code: "49", re: /^(1[5-7]\d{8,9}|[2-9]\d{5,10})$/, hint: "like 0151 23456789", fmt: n => n[0] === "1" ? [3, 9] : [n.length] },
+  // UAE: mobiles 05… have 9 digits after the 0; landlines 8.
+  AE: { code: "971", re: /^(5\d{8}|[2-9]\d{7})$/, hint: "like 050 123 4567", fmt: n => n.length === 8 ? [1, 3, 4] : [2, 3, 4] },
+};
+const ccSelect = $("#o-cc"), phoneInput = $("#o-phone");
+const phoneCountry = () => ccSelect.selectedOptions[0]?.dataset.country || "US";
+// → { ok, e164: "+12015550123", national: "2015550123" } for the selected country.
+function parsePhone(raw, country = phoneCountry()) {
+  const rule = PHONE_RULES[country];
+  let digits = String(raw).replace(/\D/g, "");
+  if (/^\s*(\+|00)/.test(raw)) {   // they typed their own country code
+    digits = digits.replace(/^00/, "");
+    const match = Object.entries(PHONE_RULES).find(([c, r]) => digits.startsWith(r.code) && (c === country || r.code !== rule.code));
+    if (match && match[0] !== country) { ccSelect.value = "+" + match[1].code; selectCountry(match[0]); return parsePhone(raw, match[0]); }
+    if (digits.startsWith(rule.code)) digits = digits.slice(rule.code.length);
+  } else if (rule.code === "1" && digits.length === 11 && digits[0] === "1") {
+    digits = digits.slice(1);   // "1 201 555 0123"
+  } else if (rule.code !== "1") {
+    digits = digits.replace(/^0/, "");   // trunk 0: "07700…" → "7700…"
+  }
+  return { ok: rule.re.test(digits), e164: "+" + rule.code + digits, national: digits };
+}
+function selectCountry(country) {
+  const opt = [...ccSelect.options].find(o => o.dataset.country === country);
+  if (opt) opt.selected = true;
+}
+// Shows the number in local groups once they leave the field, e.g. 201 555 0123.
+function prettyPhone(national, country = phoneCountry()) {
+  const fmt = PHONE_RULES[country].fmt, groups = typeof fmt === "function" ? fmt(national) : fmt, out = [];
+  let i = 0;
+  groups.forEach((n, g) => { const part = national.slice(i, g === groups.length - 1 ? undefined : i + n); if (part) out.push(part); i += n; });
+  return (PHONE_RULES[country].code === "1" ? "" : "0") + out.join(" ");
+}
+function checkPhoneField(show) {
+  const raw = phoneInput.value.trim();
+  if (!raw) { phoneInput.removeAttribute("aria-invalid"); return null; }
+  const p = parsePhone(raw);
+  if (show) {
+    phoneInput.setAttribute("aria-invalid", !p.ok);
+    if (p.ok) phoneInput.value = prettyPhone(p.national);
+  }
+  return p;
+}
+phoneInput.addEventListener("blur", () => { if (phoneInput.value.trim()) checkPhoneField(true); saveDraft(); });
+phoneInput.addEventListener("input", () => { if (phoneInput.getAttribute("aria-invalid") === "true" && checkPhoneField(false)?.ok) phoneInput.removeAttribute("aria-invalid"); });
+ccSelect.addEventListener("change", () => { if (phoneInput.value.trim()) checkPhoneField(true); saveDraft(); });
+
+// What they type on page 1 is kept, so a reload (or coming back later) doesn't wipe it.
+const optinForm = $("#optin-form");
+function saveDraft() {
+  const f = optinForm;
+  store.set("draft", { name: f.name.value, email: f.email.value, phone: f.phone.value, country: phoneCountry() });
+}
+optinForm.addEventListener("input", saveDraft);
+(function restoreDraft() {
+  const f = optinForm, draft = store.get("draft");
+  const saved = draft || (lead.email ? { name: lead.name, email: lead.email, phone: lead.phoneNational || "", country: lead.country } : null);
+  if (!saved) return;
+  if (saved.country) selectCountry(saved.country);
+  if (!f.name.value && saved.name) f.name.value = saved.name;
+  if (!f.email.value && saved.email) f.email.value = saved.email;
+  if (!f.phone.value && saved.phone) f.phone.value = saved.phone;
+})();
+
+optinForm.addEventListener("submit", e => {
   e.preventDefault();
   const f = e.currentTarget;
-  const name = f.name.value.trim(), phone = f.phone.value.trim(), email = f.email.value.trim();
+  const name = f.name.value.trim(), email = f.email.value.trim();
+  const phone = checkPhoneField(true), country = phoneCountry();
   const bad = [];
   f.name.setAttribute("aria-invalid", !name); if (!name) bad.push("your name");
-  f.phone.setAttribute("aria-invalid", phone.replace(/\D/g, "").length < 7); if (phone.replace(/\D/g, "").length < 7) bad.push("a phone number");
+  f.phone.setAttribute("aria-invalid", !phone?.ok);
+  if (!phone) bad.push("a phone number");
+  else if (!phone.ok) bad.push("a valid " + (country === "GB" ? "UK" : country) + " phone number (" + PHONE_RULES[country].hint + ")");
   f.email.setAttribute("aria-invalid", !emailOk(email)); if (!emailOk(email)) bad.push("a valid email");
   const err = $("#optin-error");
   if (bad.length) { err.textContent = "Please add " + bad.join(", ") + "."; err.hidden = false; return; }
   err.hidden = true;
-  lead = { name, email, phone: f.cc.value + " " + phone };
+  lead = { name, email, phone: phone.e164, phoneNational: f.phone.value.trim(), country };
+  saveDraft();
   const version = abVersion();
-  sendLead({ ...lead, country: f.cc.selectedOptions[0]?.dataset.country || "", version });
+  sendLead({ name, email, phone: phone.e164, country, version });
   store.set("lead", lead);
   go(version === "V2" ? "apply2" : "apply");
 });
