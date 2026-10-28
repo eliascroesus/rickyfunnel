@@ -580,7 +580,8 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
 .confirm__mail { color: var(--deep); }
 .faq { width: 100%; display: grid; gap: 14px; justify-items: center; }
 .faq h3 { font-size: clamp(1.2rem, 3vw, 1.7rem); font-weight: 500; }
-@media (max-width: 560px) { .faq h3 { font-size: calc(1.2rem - 2px); } }
+/* Phones: fill each line before wrapping (headings are balanced by default, which pushes words down early). */
+@media (max-width: 560px) { .faq h3 { font-size: calc(1.2rem - 2px); text-wrap: wrap; } }
 .faqs { width: 100%; display: grid; gap: 40px; }
 
 /* ---------- Booked: video testimonials + screenshot feed ---------- */
