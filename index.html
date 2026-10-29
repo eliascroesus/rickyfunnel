@@ -654,6 +654,26 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
 .nq b { color: var(--accent); }
 .nq__btn { display: block; max-width: 420px; text-align: center; text-decoration: none; }
 .nq__note { margin: 0; color: var(--muted); text-align: center; }
+.yt {
+  width: 100%; max-width: 520px; margin-top: 8px;
+  display: grid; justify-items: center; gap: 12px; text-align: center;
+  padding: 26px 20px 22px; border-radius: 18px;
+  background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .12);
+}
+.yt__logo { width: 46px; height: auto; }
+.yt__title { font-size: clamp(1.2rem, 3.4vw, 1.5rem); font-weight: 800; line-height: 1.25; }
+.yt__text { margin: 0; max-width: 42ch; color: var(--muted); font-size: .98rem; line-height: 1.55; }
+.yt__btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; max-width: 340px; padding: 15px 18px; margin-top: 4px;
+  border-radius: 12px; background: #ff0033; color: #fff; text-decoration: none;
+  font-family: var(--display); font-weight: 800; font-size: 1rem;
+  box-shadow: 0 10px 26px rgba(255, 0, 51, .3);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.yt__btn:hover { transform: translateY(-1px); box-shadow: 0 14px 32px rgba(255, 0, 51, .4); }
+.yt__btn svg { flex: none; width: 24px; height: auto; }
+.yt__note { margin: 0; color: var(--muted); font-size: .8rem; }
 
 /* ---------- Footer ---------- */
 .foot { max-width: 720px; text-align: center; color: var(--muted); font-size: .72rem; line-height: 1.6; }
@@ -939,6 +959,18 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
     <p class="nq">But don’t worry: join the free Discord and <b>I’ll teach you there every week.</b></p>
     <a class="btn-gold nq__btn" id="nq-discord" href="#" hidden>Join The Free Discord</a>
     <p class="nq__note" id="nq-check">Your Discord invite is in your email + SMS.</p>
+
+    <!-- Free YouTube channel: something to start on today -->
+    <section class="yt" aria-labelledby="yt-title">
+      <svg class="yt__logo" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="5" fill="#ff0033"/><path d="M11 5.5v9l8-4.5z" fill="#fff"/></svg>
+      <h2 class="yt__title" id="yt-title">Start Today With My <span class="hl">Free YouTube&nbsp;Videos</span></h2>
+      <p class="yt__text">On my channel I break down what's working for me right now: the products, the Shorts and the mistakes I made so you don't have to. It's all free. Start watching today and you'll be miles ahead when you're ready to apply again.</p>
+      <a class="yt__btn" href="https://www.youtube.com/@rickyyte?sub_confirmation=1" target="_blank" rel="noopener">
+        <svg viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="5" fill="#fff"/><path d="M11 5.5v9l8-4.5z" fill="#ff0033"/></svg>
+        Watch Free On YouTube
+      </a>
+      <p class="yt__note">Hit subscribe so you catch every new video.</p>
+    </section>
 
     <footer class="foot">
       <nav><a href="#privacy">Privacy Policy</a><a href="#terms">Terms of Service</a><a href="#disclaimer">Disclaimer</a></nav>
