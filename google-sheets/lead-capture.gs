@@ -446,9 +446,13 @@ function telegramBooking_(e, params) {
   }
 }
 
-// The call's start time from GHL's webhook, in TELEGRAM_TIMEZONE. GHL sends it either with an offset
-// ("2026-10-30T15:00:00-04:00") or as a local time plus the calendar's time zone; both are handled.
+// The call's time. Best: the workflow's Webhook action sends it as Custom data "start_time" =
+// {{appointment.start_time}} (GHL fills in the readable time). Otherwise it's looked for in GHL's standard
+// data, where it comes with an offset ("2026-10-30T15:00:00-04:00") or as a local time plus a time zone.
 function bookingTimeText_(data) {
+  const custom = data.customData || {};
+  const given = data.start_time || custom.start_time;
+  if (given) return String(given) + (data.timezone || custom.timezone ? ' (' + (data.timezone || custom.timezone) + ')' : '');
   const cal = data.calendar || data.appointment || {};
   const raw = cal.startTime || cal.start_time || data.startTime || data.appointment_start_time || '';
   if (!raw) return '(time not sent)';
@@ -458,6 +462,7 @@ function bookingTimeText_(data) {
     const d = /^\d+$/.test(text) ? new Date(Number(text)) : new Date(text);
     if (!isNaN(d)) return Utilities.formatDate(d, tz, "EEE MMM d, h:mm a '(" + tz + ")'");
   }
+  if (!/^\d{4}-\d{2}-\d{2}T/.test(text)) return text;   // already readable
   return text.replace('T', ' ').slice(0, 16) + (cal.selectedTimezone ? ' (' + cal.selectedTimezone + ')' : '');
 }
 
