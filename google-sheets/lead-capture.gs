@@ -66,6 +66,8 @@ function setup() {
 
 function doPost(e) {
   const params = (e && e.parameter) || {};
+  // GoHighLevel's (free) Webhook action posts here when a call is booked; see Telegram at the bottom.
+  if (params.source === 'ghl-booked') return json_(telegramBooking_(e, params));
   const type = params.type || 'optin';
   let result;
   const lock = LockService.getScriptLock();
@@ -393,4 +395,86 @@ function e164_(phone) {
 
 function norm_(text) {
   return String(text || '').trim().toLowerCase();
+}
+
+/* ---------- Telegram (optional) ----------
+ * Posts every booked call to a Telegram group, for free: GoHighLevel's plain "Webhook" workflow action (not the
+ * premium "Custom webhook") sends the booking here, and this script sends the message with the lead's answers
+ * from the sheet. Off until these Script properties are set (Project Settings → Script properties):
+ *   TELEGRAM_TOKEN      the bot's token from @BotFather
+ *   TELEGRAM_CHAT_ID    the group's chat id (starts with -100…)
+ *   WEBHOOK_KEY         any long random text; it must also be in the webhook URL, so nobody else can post
+ *   TELEGRAM_TIMEZONE   (optional) time zone the call time is shown in, e.g. America/New_York
+ * Then run "checkTelegram" once: a test message should land in the group.
+ * GHL workflow: trigger "Customer Booked Appointment" → action "Webhook", method POST, URL:
+ *   <this Web app URL>?source=ghl-booked&key=<WEBHOOK_KEY>
+ */
+function telegramBooking_(e, params) {
+  const props = PropertiesService.getScriptProperties();
+  const key = String(props.getProperty('WEBHOOK_KEY') || '');
+  if (!key || params.key !== key) return { ok: false, error: 'wrong key' };
+  let data = {};
+  try { data = JSON.parse((e.postData && e.postData.contents) || '{}'); } catch (err) {}
+  const contact = data.contact || {};
+  const email = String(data.email || contact.email || '').trim();
+  const name = String(data.full_name || data.contact_name || [data.first_name, data.last_name].filter(Boolean).join(' ')
+    || contact.name || '').trim();
+  const phone = String(data.phone || contact.phone || '').trim();
+
+  // Their answers, from their row in the sheet (matched by email).
+  const sheet = getSheet_(), rowNum = findRowByEmail_(sheet, email);
+  const row = rowNum ? sheet.getRange(rowNum, 1, 1, COLUMNS.length).getValues()[0] : [];
+  const answer = header => { const i = HEADERS.indexOf(header); return i >= 0 && row[i] !== '' && row[i] != null ? String(row[i]) : ''; };
+  const lines = [
+    '📅 NEW CALL BOOKED',
+    '',
+    '👤 ' + (name || answer('Full Name') || '(no name)'),
+    '🕒 ' + bookingTimeText_(data),
+    '📱 ' + (phone || answer('Phone') || '-'),
+    '📧 ' + (email || '-'),
+  ];
+  [['💰 Investment', 'Investment'], ['🎯 Goal', 'Main Goal'], ['🎯 Goal', 'Biggest Goal'], ['📍 Situation', 'Situation'],
+   ['🧱 Experience', 'Experience'], ['⚠️ Problem', 'Main Problem'], ['⚠️ Obstacles', 'Obstacles'],
+   ['📸 Instagram', 'Instagram'], ['🧪 Page', 'Version'], ['📣 Source', 'UTM Source']]
+    .forEach(([label, header]) => { const v = answer(header); if (v) lines.push(label + ': ' + v); });
+  try {
+    telegram_(lines.join('\n'));
+    return { ok: true };
+  } catch (err) {
+    console.error('Telegram: ' + err);
+    return { ok: false, error: String(err) };
+  }
+}
+
+// The call's start time from GHL's webhook, in TELEGRAM_TIMEZONE. GHL sends it either with an offset
+// ("2026-10-30T15:00:00-04:00") or as a local time plus the calendar's time zone; both are handled.
+function bookingTimeText_(data) {
+  const cal = data.calendar || data.appointment || {};
+  const raw = cal.startTime || cal.start_time || data.startTime || data.appointment_start_time || '';
+  if (!raw) return '(time not sent)';
+  const tz = PropertiesService.getScriptProperties().getProperty('TELEGRAM_TIMEZONE') || Session.getScriptTimeZone();
+  const text = String(raw);
+  if (/(Z|[+-]\d{2}:?\d{2})$/.test(text) || /^\d+$/.test(text)) {
+    const d = /^\d+$/.test(text) ? new Date(Number(text)) : new Date(text);
+    if (!isNaN(d)) return Utilities.formatDate(d, tz, "EEE MMM d, h:mm a '(" + tz + ")'");
+  }
+  return text.replace('T', ' ').slice(0, 16) + (cal.selectedTimezone ? ' (' + cal.selectedTimezone + ')' : '');
+}
+
+function telegram_(text) {
+  const props = PropertiesService.getScriptProperties();
+  const token = String(props.getProperty('TELEGRAM_TOKEN') || '').trim();
+  const chatId = String(props.getProperty('TELEGRAM_CHAT_ID') || '').trim();
+  if (!token || !chatId) throw new Error('Add TELEGRAM_TOKEN and TELEGRAM_CHAT_ID under Script properties');
+  const res = UrlFetchApp.fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
+    method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+    payload: JSON.stringify({ chat_id: chatId, text: text, disable_web_page_preview: true }),
+  });
+  if (res.getResponseCode() >= 300) throw new Error(res.getResponseCode() + ' ' + res.getContentText().slice(0, 300));
+}
+
+// Run this from the editor after adding the Script properties: sends a test message to the group.
+function checkTelegram() {
+  telegram_('✅ Ricky funnel is connected to this group. New booked calls will show up here.');
+  console.log('Sent. Check the Telegram group.');
 }
