@@ -23,7 +23,7 @@ It's a static site with no build step. On Vercel, import this repo with the defa
 
 ## Leads to Google Sheets
 
-Every opt-in on page 1 is added as a row to the "Ricky - Master Lead Sheet" spreadsheet through
+Every opt-in on page 1 (/discord; the bare domain redirects there) is added as a row to the "Ricky - Master Lead Sheet" spreadsheet through
 the Apps Script in `google-sheets/lead-capture.gs`. The page 2 answers (experience, goal, investment,
 main problem, ready to fix, Instagram on V1; situation, goal, obstacles, Instagram, investment on V2) and the Calendly booking time are then filled into that person's row,
 matched by email. The "Version" column shows which page 2 (V1 or V2) each lead got, so the two can be
