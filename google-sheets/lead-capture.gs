@@ -199,6 +199,9 @@ const GHL_STEPS = {
 };
 // The application answers that go into the note on the contact, in this order.
 const GHL_NOTE_FIELDS = ['situation', 'experience', 'motivation', 'goal', 'reason', 'obstacles', 'ready', 'investment', 'instagram'];
+// Opt-ins from the embeddable form (embed.html, e.g. on a SaaS signup page) get this tag instead of
+// GHL_STEPS.optin's, so the Discord workflows don't fire for them, plus a note saying where they came from.
+const GHL_EMBED_TAG = 'ricky-saas-optin';
 // Sheet fields that go into GHL's own contact fields rather than custom fields.
 const GHL_STANDARD = ['name', 'email', 'phone', 'country'];
 
@@ -210,9 +213,20 @@ function syncToGhl_(type, params) {
   const setup = ghlSetup_(ghl);
   const contactId = ghlUpsertContact_(ghl, setup, params);
   if (!step) return;
-  ghl_(ghl, 'post', '/contacts/' + contactId + '/tags', { tags: [GHL_STEPS[step].tag] });
-  ghlMoveOpportunity_(ghl, setup, contactId, params, step);
+  const embed = step === 'optin' && params.signup ? String(params.signup) : '';   // e.g. "SaaS"
+  ghl_(ghl, 'post', '/contacts/' + contactId + '/tags', { tags: [embed ? GHL_EMBED_TAG : GHL_STEPS[step].tag] });
+  ghlMoveOpportunity_(ghl, setup, contactId, embed ? Object.assign({}, params, { name: (params.name || params.email) + ' · ' + embed }) : params, step);
   if (step === 'applied' || step === 'not_qualified') ghlNote_(ghl, contactId, params, step);
+  if (embed) {
+    try {
+      ghl_(ghl, 'post', '/contacts/' + contactId + '/notes', {
+        body: '🆓 Signed up through the ' + embed + ' embed ("' + String(params.funnel || '').replace(/^Embed – /, '') + '")'
+          + (params.page_url ? '\nOn: ' + params.page_url : '') + '\nNot a Discord opt-in.',
+      });
+    } catch (err) {
+      console.error('GoHighLevel note: ' + err);
+    }
+  }
 }
 
 // A finished application also goes on the contact as one readable note, so setters and closers

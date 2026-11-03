@@ -710,18 +710,18 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
   display: flex; gap: 12px; align-items: center;
   padding: 14px 16px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #10306f, #0a1b40);
-  border: 1px solid rgba(95, 180, 255, .3);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, .5);
-  color: var(--fg);
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, .08);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .4);
+  color: #111827;
   font-size: .88rem;
   transition: opacity .35s ease, transform .35s ease;
 }
 .toast.is-out { opacity: 0; transform: translateY(14px); pointer-events: none; }
-.toast .avatar { width: 34px; height: 34px; background: var(--card); color: var(--deep); }
+.toast__img { flex: none; width: 44px; height: 44px; border-radius: 10px; object-fit: cover; background: #e5e7eb; }
 .toast p { margin: 0; }
-.toast small { color: var(--muted); }
-.tick { color: #4ade80; font-weight: 700; }
+.toast small { color: #6b7280; }
+.tick { color: #16a34a; font-weight: 700; }
 
 @media (max-width: 760px) {
   .booker__body { grid-template-columns: 1fr; }
@@ -1131,13 +1131,15 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
 
 <!-- Live "just joined" toast (opt-in page only) -->
 <div class="toast is-out" id="toast" role="status" aria-live="polite">
-  <span class="avatar" id="toast-av">E</span>
+  <img class="toast__img" id="toast-img" src="/assets/ricky/thumbs/sales-11k.jpg" alt="" width="44" height="44">
   <div>
     <p><span class="tick">✓ Verified</span> · <b id="toast-name">Name</b> from <span id="toast-city">City</span> just joined the <b>free Discord</b></p>
     <small>Just now</small>
   </div>
 </div>
 
+<!-- Name, email and phone checks, shared with the embeddable form (embed.html). -->
+<script src="/assets/lead-form.js"></script>
 <!-- Vimeo's player library (MIT), kept in the repo so the videos never depend on another site. -->
 <script src="/assets/vimeo-player.min.js"></script>
 <script>
@@ -1201,7 +1203,9 @@ const CONFIG = {
     { name: "Daniel", city: "Toronto" },
     { name: "Chris",  city: "Houston" },
     { name: "Ryan",   city: "London" }
-  ]
+  ],
+  // Small result photos shown in those pop-ups, one after another (assets/ricky/thumbs/).
+  toastImages: ["sales-11k", "play-buttons", "orders", "sales-30-days", "play-buttons-car", "label-roll"]
 };
 
 // Page 2, version 2 questions (one at a time). type "choice" = pick one, "text" = short typed answer,
@@ -1547,59 +1551,21 @@ function sendLead(data, type = "optin") {
 }
 
 /* ---------- Opt-in form ---------- */
-const emailOk = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
-// Phone rules per country in the dropdown: the national number (no country code, no leading 0), how to
-// show it, and which numbers are real. The real-number patterns are Google's libphonenumber data
-// (libphonenumber-js 1.13.15, every number type), which is what GHL's booking calendar checks against,
-// so a number accepted here is never "Invalid phone number" on the calendar (e.g. US area code 537 is out).
-// A typed "+44…" or leading 0 is understood too. US and Canada share +1, so either one's numbers pass.
-const PHONE_VALID = {
-  US: "(?:983[2-57-9]\\d{6}|(?:2(?:0[1-35-9]|1[02-9]|2[03-57-9]|3[1459]|4[08]|5[1-46]|6[0279]|7[02469]|8[13])|3(?:0[1-57-9]|1[02-9]|2[013-79]|3[0-24679]|4[167]|5[0-3]|6[01349]|8[056])|4(?:0[124-9]|1[02-579]|2[3-5]|3[0245]|4[023578]|58|6[349]|7[02589]|8[04])|5(?:0[1-57-9]|1[0235-8]|20|3[0149]|4[01]|5[179]|6[1-47]|7[0-5]|8[0256])|6(?:0[1-35-9]|1[024-9]|2[03689]|3[016]|4[0156]|5[01679]|6[0-279]|78|8[0-269])|7(?:0[1-46-8]|1[2-9]|2[04-8]|3[0-2478]|4[0378]|5[47]|6[02359]|7[0-59]|8[156])|8(?:0[1-68]|1[02-8]|2[0168]|3[0-2589]|4[03578]|5[046-9]|6[02-5]|7[028])|9(?:0[1346-9]|1[02-9]|2[0589]|3[0146-8]|4[01357-9]|5[12469]|7[0-3589]|8[04-69]))[2-9]\\d{6})|(?:8(?:00|33|44|55|66|77|88)[2-9]\\d{6})|(?:900[2-9]\\d{6})|(?:52(?:3(?:[2-46-9][02-9]\\d|5(?:[02-46-9]\\d|5[0-46-9]))|4(?:[2-478][02-9]\\d|5(?:[034]\\d|2[024-9]|5[0-46-9])|6(?:0[1-9]|[2-9]\\d)|9(?:[05-9]\\d|2[0-5]|49)))\\d{4}|52[34][2-9]1[02-9]\\d{4}|5(?:00|2[125-9]|3[23]|44|66|77|88)[2-9]\\d{6})",
-  CA: "(?:(?:2(?:04|[23]6|[48]9|5[07]|[67]3)|3(?:06|43|54|6[578]|82)|4(?:03|1[68]|[26]8|3[178]|50|74)|5(?:06|1[49]|48|79|8[147])|6(?:04|[18]3|39|47|72)|7(?:0[59]|42|53|78|8[02])|8(?:[06]7|19|25|7[39])|9(?:0[25]|42))[2-9]\\d{6})|(?:8(?:00|33|44|55|66|77|88)[2-9]\\d{6})|(?:900[2-9]\\d{6})|(?:52(?:3(?:[2-46-9][02-9]\\d|5(?:[02-46-9]\\d|5[0-46-9]))|4(?:[2-478][02-9]\\d|5(?:[034]\\d|2[024-9]|5[0-46-9])|6(?:0[1-9]|[2-9]\\d)|9(?:[05-9]\\d|2[0-5]|49)))\\d{4}|52[34][2-9]1[02-9]\\d{4}|(?:5(?:2[125-9]|3[23]|44|66|77|88)|6(?:22|33))[2-9]\\d{6})|(?:310\\d{4})|(?:600[2-9]\\d{6})",
-  GB: "(?:(?:1(?:1(?:3(?:[0-58]\\d\\d|73[0-5])|4(?:(?:[0-5]\\d|70)\\d|69[7-9])|(?:(?:5[0-26-9]|[78][0-49])\\d|6(?:[0-4]\\d|5[01]))\\d)|(?:2(?:(?:0[024-9]|2[3-9]|3[3-79]|4[1-689]|[58][02-9]|6[0-47-9]|7[013-9]|9\\d)\\d|1(?:[0-7]\\d|8[0-3]))|(?:3(?:0\\d|1[0-8]|[25][02-9]|3[02-579]|[468][0-46-9]|7[1-35-79]|9[2-578])|4(?:0[03-9]|[137]\\d|[28][02-57-9]|4[02-69]|5[0-8]|[69][0-79])|5(?:0[1-35-9]|[16]\\d|2[024-9]|3[015689]|4[02-9]|5[03-9]|7[0-35-9]|8[0-468]|9[0-57-9])|6(?:0[034689]|1\\d|2[0-35689]|[38][013-9]|4[1-467]|5[0-69]|6[13-9]|7[0-8]|9[0-24578])|7(?:0[0246-9]|2\\d|3[0236-8]|4[03-9]|5[0-46-9]|6[013-9]|7[0-35-9]|8[024-9]|9[02-9])|8(?:0[35-9]|2[1-57-9]|3[02-578]|4[0-578]|5[124-9]|6[2-69]|7\\d|8[02-9]|9[02569])|9(?:0[02-589]|[18]\\d|2[02-689]|3[1-57-9]|4[2-9]|5[0-579]|6[2-47-9]|7[0-24578]|9[2-57]))\\d)\\d)|2(?:0[013478]|3[0189]|4[017]|8[0-46-9]|9[0-2])\\d{3})\\d{4}|1(?:2(?:0(?:46[1-4]|87[2-9])|545[1-79]|76(?:2\\d|3[1-8]|6[1-6])|9(?:7(?:2[0-4]|3[2-5])|8(?:2[2-8]|7[0-47-9]|8[3-5])))|3(?:6(?:38[2-5]|47[23])|8(?:47[04-9]|64[0157-9]))|4(?:044[1-7]|20(?:2[23]|8\\d)|6(?:0(?:30|5[2-57]|6[1-8]|7[2-8])|140)|8(?:052|87[1-3]))|5(?:2(?:4(?:3[2-79]|6\\d)|76\\d)|6(?:26[06-9]|686))|6(?:06(?:4\\d|7[4-79])|295[5-7]|35[34]\\d|47(?:24|61)|59(?:5[08]|6[67]|74)|9(?:55[0-4]|77[23]))|7(?:26(?:6[13-9]|7[0-7])|(?:442|688)\\d|50(?:2[0-3]|[3-68]2|76))|8(?:27[56]\\d|37(?:5[2-5]|8[239])|843[2-58])|9(?:0(?:0(?:6[1-8]|85)|52\\d)|3583|4(?:66[1-8]|9(?:2[01]|81))|63(?:23|3[1-4])|9561))\\d{3})|(?:7(?:457[0-57-9]|700[01]|911[028])\\d{5}|7(?:[1-3]\\d\\d|4(?:[0-46-9]\\d|5[0-689])|5(?:0[0-8]|[13-9]\\d|2[0-35-9])|7(?:0[1-9]|[1-7]\\d|8[02-9]|9[0-689])|8(?:[014-9]\\d|[23][0-8])|9(?:[024-9]\\d|1[02-9]|3[0-689]))\\d{6})|(?:80[08]\\d{7}|800\\d{6}|8001111)|(?:(?:8(?:4[2-5]|7[0-3])|9(?:[01]\\d|8[2-49]))\\d{7}|845464\\d)|(?:70\\d{8})|(?:(?:3[0347]|55)\\d{8})|(?:76(?:464|652)\\d{5}|76(?:0[0-28]|2[356]|34|4[01347]|5[49]|6[0-369]|77|8[14]|9[139])\\d{6})|(?:56\\d{8})",
-  AU: "(?:(?:(?:241|349)0\\d\\d|8(?:51(?:0(?:0[03-9]|[12479]\\d|3[2-9]|5[0-8]|6[1-9]|8[0-7])|1(?:[0235689]\\d|1[0-69]|4[0-589]|7[0-47-9])|2(?:0[0-79]|[18][13579]|2[14-9]|3[0-46-9]|[4-6]\\d|7[89]|9[0-4])|[34]\\d\\d)|91(?:(?:[0-58]\\d|6[0135-9])\\d|7(?:0[0-24-9]|[1-9]\\d)|9(?:[0-46-9]\\d|5[0-79]))))\\d{3}|(?:2(?:[0-26-9]\\d|3[0-8]|4[02-9]|5[0135-9])|3(?:[0-3589]\\d|4[0-578]|6[1-9]|7[0-35-9])|7(?:[013-57-9]\\d|2[0-8])|8(?:55|6[0-8]|[78]\\d|9[02-9]))\\d{6})|(?:4(?:79[01]|83[0-36-9]|95[0-3])\\d{5}|4(?:[0-36]\\d|4[047-9]|[58][0-24-9]|7[02-8]|9[0-47-9])\\d{6})|(?:180(?:0\\d{3}|2)\\d{3})|(?:190[0-26]\\d{6})|(?:163\\d{2,6})|(?:14(?:5(?:1[0458]|[23][458])|71\\d)\\d{4})|(?:13(?:00\\d{6}(?:\\d{2})?|45[0-4]\\d{3})|13\\d{4})",
-  DE: "(?:32\\d{9,11}|49[1-6]\\d{10}|322\\d{6}|49[0-7]\\d{3,9}|(?:[34]0|[68]9)\\d{3,13}|(?:2(?:0[1-689]|[1-3569]\\d|4[0-8]|7[1-7]|8[0-7])|3(?:[3569]\\d|4[0-79]|7[1-7]|8[1-8])|4(?:1[02-9]|[2-48]\\d|5[0-6]|6[0-8]|7[0-79])|5(?:0[2-8]|[124-6]\\d|[38][0-8]|[79][0-7])|6(?:0[02-9]|[1-358]\\d|[47][0-8]|6[1-9])|7(?:0[2-8]|1[1-9]|[27][0-7]|3\\d|[4-6][0-8]|8[0-5]|9[013-7])|8(?:0[2-9]|1[0-79]|2\\d|3[0-46-9]|4[0-6]|5[013-9]|6[1-8]|7[0-8]|8[0-24-6])|9(?:0[6-9]|[1-4]\\d|[589][0-7]|6[0-8]|7[0-467]))\\d{3,12})|(?:1(?:6[023]|7\\d)\\d{7,8}|15(?:[0-25-9]\\d\\d|3(?:10|33))\\d{6})|(?:800\\d{7,12})|(?:(?:137[7-9]|900(?:[135]|9\\d))\\d{6})|(?:700\\d{8})|(?:1(?:6(?:013|255|399)|7(?:(?:[015]1|[69]3)3|[2-4]55|[78]99))\\d{7,8}|15(?:(?:[03-68]00|113)\\d|2\\d55|7\\d99|9\\d33)\\d{7})|(?:18(?:1\\d{5,11}|[2-9]\\d{8}))|(?:16(?:4\\d{1,10}|[89]\\d{1,11}))|(?:180\\d{5,11}|13(?:7[1-6]\\d\\d|8)\\d{4})",
-  AE: "(?:[2-4679][2-8]\\d{6})|(?:5[02-68]\\d{7})|(?:400\\d{6}|800\\d{2,9})|(?:900[02]\\d{5})|(?:600[25]\\d{5})|(?:700[05]\\d{5})",
-};
-const validRe = (...countries) => new RegExp("^(?:" + countries.map(c => PHONE_VALID[c]).join("|") + ")$");
-const PHONE_RULES = {
-  US: { code: "1", re: validRe("US", "CA"), hint: "like 201 555 0123", fmt: [3, 3, 4] },
-  CA: { code: "1", re: validRe("US", "CA"), hint: "like 416 555 0123", fmt: [3, 3, 4] },
-  GB: { code: "44", re: validRe("GB"), hint: "like 07400 123456", fmt: [4, 6] },
-  AU: { code: "61", re: validRe("AU"), hint: "like 0412 345 678", fmt: [3, 3, 3] },
-  DE: { code: "49", re: validRe("DE"), hint: "like 0151 23456789", fmt: n => n[0] === "1" ? [3, 9] : [n.length] },
-  AE: { code: "971", re: validRe("AE"), hint: "like 050 123 4567", fmt: n => n.length === 8 ? [1, 3, 4] : [2, 3, 4] },
-};
 const ccSelect = $("#o-cc"), phoneInput = $("#o-phone");
 const phoneCountry = () => ccSelect.selectedOptions[0]?.dataset.country || "US";
 // → { ok, e164: "+12015550123", national: "2015550123" } for the selected country.
+// Reads the phone box for the selected country; a typed "+44…" switches the flag to that country.
 function parsePhone(raw, country = phoneCountry()) {
-  const rule = PHONE_RULES[country];
-  let digits = String(raw).replace(/\D/g, "");
-  if (/^\s*(\+|00)/.test(raw)) {   // they typed their own country code
-    digits = digits.replace(/^00/, "");
-    const match = Object.entries(PHONE_RULES).find(([c, r]) => digits.startsWith(r.code) && (c === country || r.code !== rule.code));
-    if (match && match[0] !== country) { ccSelect.value = "+" + match[1].code; selectCountry(match[0]); return parsePhone(raw, match[0]); }
-    if (digits.startsWith(rule.code)) digits = digits.slice(rule.code.length);
-  } else if (rule.code === "1" && digits.length === 11 && digits[0] === "1") {
-    digits = digits.slice(1);   // "1 201 555 0123"
-  } else if (rule.code !== "1") {
-    digits = digits.replace(/^0/, "");   // trunk 0: "07700…" → "7700…"
-  }
-  return { ok: rule.re.test(digits), e164: "+" + rule.code + digits, national: digits };
+  const p = readPhone(raw, country);
+  if (p.country !== country) selectCountry(p.country);
+  return p;
 }
 function selectCountry(country) {
   const opt = [...ccSelect.options].find(o => o.dataset.country === country);
   if (opt) opt.selected = true;
 }
-// Shows the number in local groups once they leave the field, e.g. 201 555 0123.
-function prettyPhone(national, country = phoneCountry()) {
-  const fmt = PHONE_RULES[country].fmt, groups = typeof fmt === "function" ? fmt(national) : fmt, out = [];
-  let i = 0;
-  groups.forEach((n, g) => { const part = national.slice(i, g === groups.length - 1 ? undefined : i + n); if (part) out.push(part); i += n; });
-  return (PHONE_RULES[country].code === "1" ? "" : "0") + out.join(" ");
-}
+const prettyPhone = (national, country = phoneCountry()) => formatPhone(national, country);
 function checkPhoneField(show) {
   const raw = phoneInput.value.trim();
   if (!raw) { phoneInput.removeAttribute("aria-invalid"); return null; }
@@ -1631,13 +1597,6 @@ optinForm.addEventListener("input", saveDraft);
   if (!f.phone.value && saved.phone) f.phone.value = saved.phone;
 })();
 
-// "jordan lee" or "JORDAN LEE" → "Jordan Lee", so emails say "Hey Jordan". Names typed with their own
-// capitals ("McKenzie", "de la Cruz") are left exactly as typed.
-function tidyName(raw) {
-  const name = raw.trim().replace(/\s+/g, " ");
-  if (name !== name.toLowerCase() && name !== name.toUpperCase()) return name;
-  return name.toLowerCase().replace(/(^|[\s\-'’])(\p{L})/gu, (m, sep, ch) => sep + ch.toUpperCase());
-}
 
 optinForm.addEventListener("submit", e => {
   e.preventDefault();
@@ -1979,7 +1938,7 @@ const toast = (() => {
     const p = list[i++ % list.length];
     $("#toast-name").textContent = p.name;
     $("#toast-city").textContent = p.city;
-    $("#toast-av").textContent = p.name[0];
+    $("#toast-img").src = "/assets/ricky/thumbs/" + CONFIG.toastImages[(i - 1) % CONFIG.toastImages.length] + ".jpg";
     el.classList.remove("is-out");
     timer = setTimeout(() => { el.classList.add("is-out"); timer = setTimeout(show, 7000); }, 5000);
   }
