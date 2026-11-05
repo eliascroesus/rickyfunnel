@@ -15,6 +15,7 @@ YouTube Shorts dropshipping funnel. All pages live in one file, `index.html`; th
    go to the sheet. Put the Discord invite in `CONFIG.discordUrl` to show a "Join The Free Discord" button.
 
 `vercel.json` serves `index.html` at `/apply`, `/apply-2`, `/booked` and `/not-qualified`. Images and clips live in `assets/ricky/`.
+It also serves the analytics dashboard at `/admin` and the tracked short links at `/go/<name>` (see below).
 
 ## Hosting
 
@@ -55,6 +56,70 @@ Private Integration token) and `GHL_LOCATION_ID`; run `checkGhl` in the script e
 The page marks a finished application with a `stage` field; single answers only update the contact's fields.
 Pipeline names, stages and tags live in `GHL_PIPELINES` and `GHL_STEPS` in `lead-capture.gs`; a step can be
 sent to a named stage instead of the first one.
+
+## Analytics dashboard (/admin)
+
+`/admin` shows, for any date range, traffic source and A/B version:
+
+- **Link clicks** on your tracked short links, per place you posted them (YouTube bio, IG story, TikTok bio…),
+  and how many of those clicks turned into visitors, opt-ins, applications and booked calls.
+- **The funnel step by step**: visited → started the opt-in form → opted in → reached page 2 → played the VSL →
+  started the application → finished it → qualified → booked. Each person is counted once per step, and the
+  biggest drop-off is pointed out.
+- **Videos**: who saw each video, who pressed play with sound, and a drop-off curve showing what share are
+  still watching at every 5% of the video (with the exact minute:second), the average watched, halfway and
+  to-the-end rates.
+- **A/B test**: V1 (`/apply`) against V2 (`/apply-2`) at every step, with a plain-English verdict on whether
+  the difference in booked calls is real yet (95% confidence) or still luck.
+- **Application questions**: how many people answered each question on both versions.
+- **Pages & buttons**, **audience** (iPhone/Android/computer, Instagram/TikTok in-app browser vs Safari,
+  country), **over time** charts (by hour for a single day), and a **live** list of new visitors, opt-ins and
+  bookings, refreshed every 30 seconds.
+
+### Setup (once, about 5 minutes on Vercel)
+
+1. **Database**: Vercel → this project → **Storage** → **Create Database** → **Upstash for Redis** (free plan) →
+   connect it to this project for all environments. That adds `KV_REST_API_URL` and `KV_REST_API_TOKEN`.
+2. **Password**: **Settings → Environment Variables** → add `ADMIN_PASSWORD` (whatever you want to log in with).
+   Optional: `TRACK_TIMEZONE` (default `America/New_York`) sets which time zone "today" uses.
+3. **Redeploy** (Deployments → ⋯ → Redeploy), then open `https://rickyshoffner.com/admin`.
+
+Until the database is connected, the pages work exactly as before and simply don't count anything.
+
+### Tracked links
+
+Make one link per place you post, in **/admin → Tracked links** (there are one-click presets for YouTube bio,
+video description, pinned comment, Instagram bio/story/DMs, TikTok bio…). Each looks like
+`https://rickyshoffner.com/go/ig-story`: it counts the tap, then sends the person straight on to the opt-in
+page (or `/apply`, `/apply-2`, or any other link you choose) with `?ref=ig-story` added, so every page after it
+knows where they came from. You can change where a link goes later without changing the link.
+
+- Bots and link previews (Instagram/iMessage/WhatsApp/Discord previews, crawlers) aren't counted.
+- "Clicks" vs "Visitors": the gap is people who tapped but left before the page loaded (common in in-app browsers).
+- Links without a tracked link still show up, worked out from the site or app they came from ("Instagram (no
+  tracked link)", "Google", "Direct / unknown"), and `?utm_source=` links work too.
+- A visitor keeps the last link that brought them for 30 days, so a booking two days later still counts for it.
+- The link also goes to the Google Sheet in a new **Source Link** column (and to a GoHighLevel field named
+  "Source Link" if you make one). To get the column: paste the updated `google-sheets/lead-capture.gs`, run
+  `setup`, then Deploy → Manage deployments → New version.
+
+### Your own visits
+
+Testing the funnel from your own browser adds to the numbers. In **/admin → Settings**, tick "Don't count my
+visits on this browser"; on your phone, open any funnel page with `?rt=off` at the end once (`?rt=on` undoes it).
+**Settings → Delete all numbers** starts the counts from zero (e.g. after testing); tracked links stay.
+
+### How it works
+
+- `assets/track.js` (loaded by `index.html` and `embed.html`) gives each browser a random id (no names, emails
+  or cookies), and sends small batches of events to `/api/e`: page views, funnel steps (each once per person),
+  and which 5% parts of each video were watched with sound. The VSL autoplays muted, so only watching after
+  "Click to listen" (or play) counts; skipping ahead doesn't count the part skipped.
+- `api/go.js` handles `/go/<name>`; `api/admin.js` serves the dashboard's data behind `ADMIN_PASSWORD`;
+  `api/_lib/store.js` holds the shared database code (Upstash's REST API, no packages to install).
+- Counts are stored per day, link and A/B version (plus per month for long ranges), so the dashboard stays fast
+  for any date range. Upstash's free plan (256 MB, 500K commands a month) covers a lot of traffic; each event batch
+  is one request. If you outgrow it, pay-as-you-go is about $0.20 per 100K commands.
 
 ## Editing
 

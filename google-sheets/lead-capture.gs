@@ -6,6 +6,7 @@
  *                            Ready To Fix, Instagram;
  *                            V2 (/apply-2) fills Situation, Biggest Goal, Obstacles, Instagram, Investment.
  *   - Calendly booking     → stamps "Call Booked At" on their row.
+ *   - Source Link          → the /go/… tracked link (or app/site) they came from, as on /admin.
  *   - GoHighLevel (optional) → the same lead also goes to GoHighLevel; see the bottom of this file.
  *
  * Setup (once):
@@ -56,6 +57,7 @@ const COLUMNS = [
   ['Obstacles', 'obstacles'],
   ['Main Goal', 'motivation'],
   ['Ready To Fix', 'ready'],
+  ['Source Link', 'source_link'],   // the /go/… link they came from, as on /admin (or the app/site)
 ];
 const HEADERS = COLUMNS.map(([header]) => header);
 const EMAIL_COL = COLUMNS.findIndex(([, field]) => field === 'email');

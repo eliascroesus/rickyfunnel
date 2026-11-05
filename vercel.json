@@ -9,6 +9,12 @@
     { "source": "/apply", "destination": "/index.html" },
     { "source": "/apply-2", "destination": "/index.html" },
     { "source": "/booked", "destination": "/index.html" },
-    { "source": "/not-qualified", "destination": "/index.html" }
+    { "source": "/not-qualified", "destination": "/index.html" },
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/go/:slug", "destination": "/api/go?slug=:slug" }
+  ],
+  "headers": [
+    { "source": "/admin", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }, { "key": "Cache-Control", "value": "no-store" }] },
+    { "source": "/admin.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] }
   ]
 }

@@ -1140,6 +1140,8 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
 
 <!-- Name, email and phone checks, shared with the embeddable form (embed.html). -->
 <script src="/assets/lead-form.js"></script>
+<!-- Funnel analytics for /admin: visits, which link they came from, steps and video watching. -->
+<script src="/assets/track.js"></script>
 <!-- Vimeo's player library (MIT), kept in the repo so the videos never depend on another site. -->
 <script src="/assets/vimeo-player.min.js"></script>
 <script>
@@ -1243,6 +1245,8 @@ const APPLY2_QUESTIONS = [
 /* ======================================================================= */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+// Analytics for /admin (assets/track.js). If that file didn't load, these do nothing and the page works as usual.
+const analytics = window.rt || { start() {}, set() {}, once() {}, hit() {}, flush() {}, label: () => "", video: () => ({ view() {}, time() {}, ended() {} }) };
 // Saved in the browser for 30 days, so a reload or coming back later in a new tab keeps what they entered.
 const STORE_DAYS = 30;
 const store = {
@@ -1330,6 +1334,11 @@ function videoControls(box, autoplay) {
   box.classList.toggle("is-muted", autoplay);
   const listen = $(".vp__listen", box), fill = $(".vp__fill", box);
   let paused = true, muted = autoplay, duration = 0, touch = false, uiTimer = null;
+  // Analytics: who saw it, who watched with sound, and how far (muted autoplay doesn't count as watching).
+  const watch = analytics.video(box.dataset.video);
+  watch.view();
+  player.on("timeupdate", d => watch.time(d.seconds, d.percent, d.duration, !muted && !paused));
+  player.on("ended", () => watch.ended(!muted));
 
   const showUi = () => {
     box.classList.add("show-ui");
@@ -1421,8 +1430,17 @@ function abVersion() {
   return v;
 }
 const pageVersion = () => (VIEW === "apply2" ? "V2" : VIEW === "apply" ? "V1" : abVersion());
+// The A/B version analytics counts things under: the page's own on page 2, else the one they were given at
+// opt-in (none before it, since the split happens there). Unlike abVersion(), this never picks one.
+function trackVersion() {
+  if (VIEW === "apply") return "V1";
+  if (VIEW === "apply2") return "V2";
+  if (!lead.email) return "";
+  try { return localStorage.getItem("ricky_apply_version") || ""; } catch { return ""; }
+}
 
 function route() {
+  analytics.start({ page: VIEW, ver: trackVersion() });
   $$("[data-view]").forEach(v => { v.hidden = v.dataset.view !== VIEW; });
   const page = $(`[data-view="${VIEW}"]`);
   // Only the visible page's clips play, so the other pages' videos never download.
@@ -1543,6 +1561,7 @@ function sendLead(data, type = "optin") {
     page_url: location.href.split("#")[0],
     ...Object.fromEntries(UTM_KEYS.map(k => [k, tracking[k] || ""])),
     referrer: tracking.referrer || document.referrer,
+    source_link: analytics.label(),   // the /go/… link (or app/site) they came from, as on /admin
     device: /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? "Mobile" : "Desktop",
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || ""
   });
@@ -1611,15 +1630,18 @@ optinForm.addEventListener("submit", e => {
   else if (!phone.ok) bad.push("a valid " + (country === "GB" ? "UK" : country) + " phone number (" + PHONE_RULES[country].hint + ")");
   f.email.setAttribute("aria-invalid", !emailOk(email)); if (!emailOk(email)) bad.push("a valid email");
   const err = $("#optin-error");
-  if (bad.length) { err.textContent = "Please add " + bad.join(", ") + "."; err.hidden = false; return; }
+  if (bad.length) { err.textContent = "Please add " + bad.join(", ") + "."; err.hidden = false; analytics.once("s:optin_error"); return; }
   err.hidden = true;
   lead = { name, email, phone: phone.e164, phoneNational: f.phone.value.trim(), country };
   saveDraft();
   const version = abVersion();
   sendLead({ name, email, phone: phone.e164, country, version });
   store.set("lead", lead);
+  analytics.set({ ver: version });
+  analytics.once("s:optin", { now: true });
   go(version === "V2" ? "apply2" : "apply");
 });
+optinForm.addEventListener("focusin", () => analytics.once("s:optin_start"));
 $("#back-to-form").addEventListener("click", () => { $("#optin-form").scrollIntoView({ behavior: "smooth", block: "center" }); $("#o-name").focus({ preventScroll: true }); });
 
 /* ---------- Application form gates the Calendly booking ---------- */
@@ -1629,6 +1651,8 @@ function checkApply() {
     ? !!applyForm.querySelector(`input[name="${el.name}"]:checked`)
     : el.value.trim() && (el.type !== "email" || emailOk(el.value.trim())));
   const out = ok && CONFIG.disqualify.includes(applyForm.elements.investment.value);
+  // Analytics: each question answered (to see where people stop), counted once per person.
+  $$("[name]", applyForm).forEach(el => { if (el.value.trim()) { analytics.once("s:apply_start"); analytics.once("q:a1:" + el.name); } });
   if (ok) queueApplication(out); else clearTimeout(applicationTimer);
   const open = ok && !out;
   $("#cal-embed").classList.toggle("is-locked", !open);
@@ -1652,6 +1676,7 @@ function queueApplication(disqualified) {
   applicationTimer = setTimeout(() => {
     const data = { ...applicationData(), stage: disqualified ? "not_qualified" : "applied" }, key = JSON.stringify(data);
     if (key !== applicationSent) { applicationSent = key; sendLead(data, "application"); }
+    analytics.once(disqualified ? "s:not_qualified" : "s:applied", { now: true });
     if (disqualified) go("notqualified");
   }, 1500);
 }
@@ -1790,6 +1815,8 @@ function tfNext() {
     return;
   }
   err.hidden = true;
+  analytics.once("s:apply_start");
+  analytics.once("q:a2:" + q.key);
   // Save each answer as it's given, so drop-offs show in the sheet (skipped if nothing changed).
   // The last answer also sends "stage", which is what moves them along in GoHighLevel.
   const last = tfIndex === APPLY2_QUESTIONS.length - 1, data = typeformData();
@@ -1797,6 +1824,7 @@ function tfNext() {
   if (last) data.stage = out ? "not_qualified" : "applied";
   const key = JSON.stringify(data);
   if (data.email && key !== tfSent) { tfSent = key; sendLead(data, "application"); }
+  if (last) analytics.once(out ? "s:not_qualified" : "s:applied", { now: true });
   if (!last) tfShow(tfIndex + 1);
   else if (out) go("notqualified");
   else tfFinish();
@@ -1844,6 +1872,11 @@ if (CONFIG.discordUrl) {
   $("#nq-discord").hidden = false;
   $("#nq-check").hidden = true;
 }
+
+/* ---------- Analytics: button clicks after the application (see /admin → Pages) ---------- */
+[["#nq-discord", "s:nq_discord"], ["#view-notqualified .yt__btn", "s:nq_youtube"],
+ ["#confirm-gmail", "s:confirm_gmail"], ["#confirm-outlook", "s:confirm_outlook"]]
+  .forEach(([sel, metric]) => $(sel)?.addEventListener("click", () => analytics.once(metric, { now: true })));
 
 /* ---------- Results galleries (tap an image to see it bigger) ---------- */
 $$(".receipt > img").forEach(img => {
@@ -1921,6 +1954,7 @@ window.addEventListener("message", e => {
   if (!calendly && !isGhlBooking(e)) return;
   if (bookingSent) return;
   bookingSent = true;
+  analytics.once("s:booked", { now: true });
   const answers = VIEW === "apply2" ? typeformData() : applicationData();
   store.set("booking", { ...answers, bookedAt: Date.now() });
   sendLead(answers, "booked");
