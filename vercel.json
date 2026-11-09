@@ -10,6 +10,10 @@
     { "source": "/apply-2", "destination": "/index.html" },
     { "source": "/booked", "destination": "/index.html" },
     { "source": "/not-qualified", "destination": "/index.html" },
+    { "source": "/redesign/discord", "destination": "/redesign/discord/index.html" },
+    { "source": "/redesign/apply", "destination": "/redesign/apply/index.html" },
+    { "source": "/redesign/apply-2", "destination": "/redesign/apply-2/index.html" },
+    { "source": "/redesign/booked", "destination": "/redesign/booked/index.html" },
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/go/:slug", "destination": "/api/go?slug=:slug" }
   ],

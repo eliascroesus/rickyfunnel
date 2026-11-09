@@ -240,7 +240,7 @@ function ghlNote_(ghl, contactId, params, step) {
     .map(([col, value]) => col[0] + ': ' + value);
   if (!lines.length) return;
   const head = (step === 'applied' ? '✅ Application' : '❌ Application (not qualified)')
-    + (params.version ? ' · ' + params.version + (params.version === 'V1' ? ' /apply' : ' /apply-2') : '');
+    + (params.version ? ' · ' + params.version + (/V1$/.test(params.version) ? ' /apply' : ' /apply-2') : '');
   try {
     ghl_(ghl, 'post', '/contacts/' + contactId + '/notes', { body: head + '\n\n' + lines.join('\n') });
   } catch (err) {
