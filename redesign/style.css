@@ -95,7 +95,7 @@ h2 { font-size: clamp(29px, 4.8vw, 48px); font-weight: 900; line-height: 1.08; l
 .hero h1.warn { display: flex; align-items: center; justify-content: center; gap: 12px; }
 .hero h1.warn svg { flex: none; width: clamp(28px, 4vw, 44px); height: auto; color: var(--accent); filter: drop-shadow(0 0 6px rgba(var(--accent-rgb), .3)); }
 .pre-line { font-size: clamp(15px, 2vw, 21px); font-weight: 800; margin-bottom: 10px; text-shadow: 0 2px 18px rgba(0, 0, 0, .75); }
-/* The guarantee under the page 2 headline: a gold-edged box with a shield */
+/* The guarantee under the page 2 form: a gold-edged box with a shield */
 .guarantee {
   display: flex; align-items: center; gap: 14px; max-width: 760px; margin: -6px auto 26px; padding: 14px 20px;
   text-align: left; border-radius: 14px; border: 1.5px solid rgba(var(--cta-rgb), .75);
@@ -109,8 +109,12 @@ h2 { font-size: clamp(29px, 4.8vw, 48px); font-weight: 900; line-height: 1.08; l
   display: inline-block; margin-right: 6px; padding: 2px 9px; border-radius: 6px; vertical-align: 1px;
   background: var(--cta); color: var(--cta-ink) !important; font-size: .78em; font-weight: 900; letter-spacing: .6px; text-transform: uppercase;
 }
+.guarantee--under { margin: 22px auto 0; }
+/* Not for people who just got the "you don't qualify" box */
+.booker:has(#nq:not([hidden])) ~ .guarantee, .book-panel:has(#nq:not([hidden])) ~ .guarantee { display: none; }
 @media (max-width: 560px) {
-  .guarantee { gap: 11px; padding: 12px 14px; margin: -4px auto 22px; }
+  .guarantee { gap: 11px; padding: 12px 14px; }
+  .guarantee--under { margin-top: 18px; }
   .guarantee svg { width: 34px; height: 34px; }
 }
 /* "Step #1: …" headings */
