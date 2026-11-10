@@ -193,6 +193,16 @@ h2 { font-size: clamp(29px, 4.8vw, 48px); font-weight: 900; line-height: 1.08; l
   pointer-events: none; opacity: 0; transition: opacity .2s ease;
 }
 .vp__big svg { width: 40%; height: 40%; margin-left: 6%; }
+/* "Watch again" (instead of Vimeo's end screen) */
+.vp__replay {
+  position: absolute; z-index: 4; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: none; align-items: center; gap: 10px; padding: 14px 24px; border: 0; border-radius: 999px; cursor: pointer;
+  background: linear-gradient(180deg, #ffd95a 0%, #f7c948 55%, #e6a417 100%); color: #241a02;
+  font: inherit; font-weight: 800; font-size: clamp(15px, 2.4vw, 18px); box-shadow: 0 10px 34px rgba(0, 0, 0, .45);
+}
+.vp__replay svg { width: 1.25em; height: 1.25em; }
+.vp.is-ended .vp__replay { display: inline-flex; }
+.vp.is-ended .vp__big { opacity: 0 !important; }
 .vp.is-paused .vp__big { opacity: 1; }
 .vp:has(.vp__listen:not([hidden])) .vp__big { opacity: 0; }
 .vp__bar {

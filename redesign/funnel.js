@@ -204,6 +204,26 @@ function videoControls(box, autoplay) {
     if (listen && !listen.hidden) return unmute();
     if (paused) play(); else player.pause().catch(() => {});
   };
+  // When a Vimeo video plays to its very end, Vimeo shows its own end screen ("More from …" with other videos
+  // from the account). So it's stopped just before the last frame instead, with a "Watch again" button on top.
+  // Pressing play again (or "Watch again") starts it over. If it ever does reach the end (e.g. while the tab was
+  // in the background), it jumps back to the start straight away, which takes the end screen down.
+  const END_GAP = 0.6;
+  let atEnd = false, selfSeek = false;
+  box.insertAdjacentHTML("beforeend", `<button class="vp__replay" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg><span>Watch again</span></button>`);
+  const finish = () => {
+    if (atEnd) return;
+    atEnd = true;
+    box.classList.add("is-ended");
+    if (listen) listen.hidden = true;
+    player.pause().catch(() => {});
+  };
+  const restart = () => { atEnd = false; box.classList.remove("is-ended"); player.setCurrentTime(0).catch(() => {}); };
+  player.on("timeupdate", d => { if (!atEnd && d.duration > END_GAP * 2 && d.seconds >= d.duration - END_GAP) finish(); });
+  player.on("ended", () => { finish(); selfSeek = true; player.setCurrentTime(0).catch(() => {}); });
+  player.on("play", () => { if (atEnd) restart(); });
+  player.on("seeked", d => { if (selfSeek) { selfSeek = false; return; } if (atEnd && d.duration && d.seconds < d.duration - END_GAP) { atEnd = false; box.classList.remove("is-ended"); } });
+  $(".vp__replay", box).addEventListener("click", () => { restart(); setMuted(false); play(); });
   player.on("play", () => {
     paused = false; box.classList.remove("is-paused");
     players.forEach(p => { if (p !== player) p.pause().catch(() => {}); });   // one video at a time
