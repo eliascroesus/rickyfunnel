@@ -54,6 +54,15 @@ h2 { font-size: clamp(29px, 4.8vw, 48px); font-weight: 900; line-height: 1.08; l
   font-size: 13px; font-weight: 700; color: var(--muted);
 }
 .gbar b { color: #fff; }
+/* Page 2's announcement line ("Check Your Email + SMS…"): scrolls away with the page, always one line */
+.announce {
+  display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 12px;
+  white-space: nowrap; overflow: hidden;
+  background: rgba(7, 7, 7, .94); border-bottom: 1px solid var(--line);
+  font-size: clamp(11px, 3.3vw, 15px); font-weight: 700; color: rgba(255, 255, 255, .85);
+}
+.announce b { color: var(--accent-bright); font-weight: 800; }
+.announce svg { flex: none; width: 1.35em; height: 1.35em; color: var(--accent-bright); }
 .gbar img { width: 22px; height: 22px; border-radius: 6px; flex: none; }
 .gbar .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(var(--accent-rgb), .18); flex: none; }
 .gbar .dot { animation: live 1.8s ease-in-out infinite; }
