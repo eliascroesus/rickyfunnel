@@ -395,22 +395,23 @@ h2 { font-size: clamp(29px, 4.8vw, 48px); font-weight: 900; line-height: 1.08; l
 }
 
 /* ---------- /booked ---------- */
-.confirm { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; max-width: 600px; margin: 0 auto; }
-.confirm__btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 16px 12px;
-  border-radius: 12px; background: #fff; color: #1f1f1f; text-decoration: none; white-space: nowrap;
-  font-weight: 800; font-size: clamp(13px, 3.4vw, 17px); box-shadow: 0 0 0 2px rgba(var(--accent-rgb), .5), 0 0 16px rgba(var(--accent-rgb), .15);
-  transition: transform .15s ease, box-shadow .15s ease;
+/* "Confirm Your Call Now": three cards, an icon above each (phones: icon beside the text) */
+.csteps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; max-width: 980px; margin: 0 auto; text-align: left; }
+.cstep { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.cstep__icon svg { display: block; width: 76px; height: 76px; filter: drop-shadow(0 8px 22px rgba(var(--accent-rgb), .35)); }
+.cstep__txt {
+  flex: 1; width: 100%; padding: 16px 18px; border-radius: 16px;
+  background: var(--panel); border: 1px solid rgba(var(--accent-rgb), .45); box-shadow: 0 0 22px -10px rgba(var(--accent-rgb), .5);
+  color: var(--muted); font-size: 15px; line-height: 1.5;
 }
-.confirm__btn:hover { transform: translateY(-1px); box-shadow: 0 0 0 2px var(--accent), 0 0 22px rgba(var(--accent-rgb), .25); }
-.confirm__btn svg { flex: none; width: 26px; height: 26px; }
-.confirm__label small { font: inherit; }
-.confirm-note { margin-top: 12px; font-size: 13.5px; color: var(--muted); }
-.confirm-note b { color: #fff; }
-@media (max-width: 480px) {
-  .confirm__btn { justify-content: flex-start; padding: 11px 12px; gap: 9px; }
-  .confirm__label { display: grid; text-align: left; line-height: 1.15; }
-  .confirm__label small { font-size: 11px; font-weight: 600; color: #5f6368; }
+.cstep__txt strong { display: block; margin-bottom: 4px; font-size: 17px; font-weight: 800; color: #fff; }
+.cstep__txt strong i { font-style: normal; color: var(--accent-bright); }
+.cstep__txt b { color: #fff; }
+@media (max-width: 760px) {
+  .csteps { grid-template-columns: 1fr; gap: 12px; }
+  .cstep { flex-direction: row; gap: 12px; }
+  .cstep__icon svg { width: 54px; height: 54px; }
+  .cstep__txt { padding: 13px 15px; font-size: 14px; }
 }
 /* FAQ videos: one per row, big */
 .vid-grid { display: grid; gap: 34px; max-width: 960px; margin: 34px auto 0; text-align: left; }

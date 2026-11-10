@@ -33,9 +33,6 @@ const CONFIG = {
   youtubeUrl: "https://www.youtube.com/@rickyyte",
   // Investment answers that don't qualify for a call (V1 and V2 wording): they see the free Discord instead of the calendar.
   disqualify: ["Under $500", "I want to, but don't have the resources to fund my goals"],
-  // How "Confirm In Gmail" on /booked finds the confirmation email: from this address, with these words in the subject.
-  confirmFrom: "ricky@ytd.rickyshoffner.com",
-  confirmSubject: "Strategy Call",
 };
 
 // V2 (/redesign/apply-2), one question at a time (same questions as the live /apply-2).
@@ -581,13 +578,4 @@ if (PAGE === "booked") {
     const [q, url] = CONFIG.faqVideos.filter(([, u]) => u)[i];
     mountVideo(box, url, { title: q });
   });
-  // "Confirm In Gmail" opens their Gmail searched for the confirmation email (Spam and Promotions too);
-  // "Confirm In Outlook" opens Outlook on the web (Outlook.com for personal addresses, Microsoft 365 for work ones).
-  const email = (lead.email || "").trim().toLowerCase(), domain = email.split("@")[1] || "";
-  const words = `subject:"${CONFIG.confirmSubject}"`;
-  const query = CONFIG.confirmFrom ? `in:anywhere {from:${CONFIG.confirmFrom} ${words}}` : `in:anywhere ${words}`;
-  const gmail = "https://mail.google.com/mail/" + (email ? "?authuser=" + encodeURIComponent(email) : "u/0/") + "#search/" + encodeURIComponent(query).replace(/%20/g, "+");
-  $("#confirm-gmail").href = "https://accounts.google.com/ServiceLogin?" + new URLSearchParams({ service: "mail", passive: "true", ...(email ? { Email: email } : {}), continue: gmail });
-  const personal = !domain || /^(outlook|hotmail|live|msn|gmail|googlemail|yahoo|icloud|me|mac|aol|proton)\./.test(domain);
-  $("#confirm-outlook").href = personal ? "https://outlook.live.com/mail/0/" : "https://outlook.office.com/mail/";
 }

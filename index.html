@@ -594,30 +594,24 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
 
 /* ---------- Booked ---------- */
 #view-booked .step { font-size: clamp(1.3rem, 3.4vw, 2.05rem); font-style: normal; }
-.confirm { width: 100%; max-width: 560px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.confirm__label small { font: inherit; }
-/* Phones: "Confirm In" goes on a small line above the app name so both buttons fit side by side. */
-@media (max-width: 480px) {
-  .confirm__btn { justify-content: flex-start; padding: 11px 12px; gap: 9px; }
-  .confirm__label { display: grid; text-align: left; line-height: 1.15; font-size: 1.02rem; }
-  .confirm__label small { font-size: .7rem; font-weight: 600; color: #5f6368; }
+/* "Confirm Your Call Now": three cards, an icon above each (phones: icon beside the text) */
+.csteps { width: 100%; max-width: 980px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 28px; }
+.cstep { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.cstep__icon svg { display: block; width: 76px; height: 76px; filter: drop-shadow(0 8px 22px rgba(95, 180, 255, .35)); }
+.cstep__txt {
+  flex: 1; width: 100%; margin: 0; padding: 16px 18px; border-radius: 16px; text-align: left;
+  background: rgba(255, 255, 255, .06); border: 1px solid rgba(95, 180, 255, .4);
+  color: var(--muted); font-size: .95rem; line-height: 1.5;
 }
-/* Twice the usual space between the buttons and the Step #2 title. */
-.confirm { margin-bottom: 28px; }
-/* Phones: extra room under the buttons (grows with the screen height), so the thank-you video and the
-   buttons stand out on the first screen before Step #2 starts. */
-@media (max-width: 560px) { .confirm { margin-bottom: max(56px, calc((100svh - 500px) * .6)); } }
-
-.confirm__btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-  width: 100%; padding: 15px 12px;
-  border-radius: 14px; background: #fff; color: #1f1f1f; text-decoration: none;
-  font-family: var(--display); font-weight: 800; font-size: clamp(.82rem, 3.4vw, 1.08rem); white-space: nowrap;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, .35);
-  transition: transform .15s ease, box-shadow .15s ease;
+.cstep__txt strong { display: block; margin-bottom: 4px; font-family: var(--display); font-size: 1.08rem; font-weight: 800; color: #fff; }
+.cstep__txt strong i { font-style: normal; color: var(--accent); }
+.cstep__txt b { color: #fff; }
+@media (max-width: 760px) {
+  .csteps { grid-template-columns: 1fr; gap: 12px; }
+  .cstep { flex-direction: row; gap: 12px; }
+  .cstep__icon svg { width: 54px; height: 54px; }
+  .cstep__txt { padding: 13px 15px; font-size: .9rem; }
 }
-.confirm__btn:hover { transform: translateY(-1px); box-shadow: 0 14px 34px rgba(0, 0, 0, .45); }
-.confirm__btn svg { flex: none; width: 26px; height: 26px; }
 .faq { width: 100%; display: grid; gap: 14px; justify-items: center; }
 .faq h3 { font-size: clamp(1.2rem, 3vw, 1.7rem); font-weight: 500; }
 /* Phones: fill each line before wrapping (headings are balanced by default, which pushes words down early). */
@@ -1041,19 +1035,25 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
       <div class="video__bar"><span></span></div>
     </div>
 
-    <!-- Opens their inbox at the confirmation email (spam included). The link is set in the script from their email. -->
-    <div class="confirm">
-      <a class="confirm__btn" id="confirm-gmail" href="https://mail.google.com/mail/u/0/#search/in%3Aanywhere+from%3Aricky%40ytd.rickyshoffner.com" target="_blank" rel="noopener">
-        <svg viewBox="52 42 88 66" aria-hidden="true"><path fill="#4285f4" d="M58 108h14V74L52 59v43c0 3.32 2.69 6 6 6"/><path fill="#34a853" d="M120 108h14c3.32 0 6-2.69 6-6V59l-20 15"/><path fill="#fbbc04" d="M120 48v26l20-15v-8c0-7.42-8.47-11.65-14.4-7.2"/><path fill="#ea4335" d="M72 74V48l24 18 24-18v26L96 92"/><path fill="#c5221f" d="M52 51v8l20 15V48l-5.6-4.2c-5.94-4.45-14.4-.22-14.4 7.2"/></svg>
-        <span class="confirm__label"><small>Confirm In </small>Gmail</span>
-      </a>
-      <a class="confirm__btn" id="confirm-outlook" href="https://outlook.live.com/mail/0/" target="_blank" rel="noopener">
-        <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="12" y="6" width="17" height="20" rx="2" fill="#28a8ea"/><path d="M12 12l8.5 5.5L29 12" fill="none" stroke="#fff" stroke-width="1.6"/><rect x="3" y="9" width="14" height="14" rx="2" fill="#0364b8"/><ellipse cx="10" cy="16" rx="3.3" ry="4" fill="none" stroke="#fff" stroke-width="2"/></svg>
-        <span class="confirm__label"><small>Confirm In </small>Outlook</span>
-      </a>
+    <h2 class="step" data-fit="booked"><b>Step #2:</b> Confirm Your Call <span class="hl">Now</span></h2>
+
+    <!-- Three things to do so the call is confirmed (replaced the Gmail / Outlook buttons) -->
+    <div class="csteps">
+      <article class="cstep">
+        <div class="cstep__icon"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="4" y="8" width="56" height="48" rx="13" fill="#4da3ff"/><rect x="14" y="21" width="34" height="24" rx="3" fill="#fff" stroke="#0b1b33" stroke-width="2.5"/><path d="M14.5 22.5 31 34.5l16.5-12" fill="none" stroke="#0b1b33" stroke-width="2.5" stroke-linejoin="round"/><circle cx="50" cy="15" r="7" fill="#ef4444" stroke="#fff" stroke-width="2"/></svg></div>
+        <p class="cstep__txt"><strong><i>1.</i> Confirm Your Email</strong>Open your email (check Spam &amp; Promotions too) and reply <b>"Yes"</b> to the confirmation email for your call.</p>
+      </article>
+      <article class="cstep">
+        <div class="cstep__icon"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 7C17.1 7 5 16.8 5 29c0 6.8 3.7 12.8 9.6 16.9L11.5 57l12.4-6.3c2.6.6 5.3 1 8.1 1 14.9 0 27-9.9 27-22S46.9 7 32 7z" fill="#34c759"/><path d="M19 23.5h26M19 30.5h26M19 37.5h17" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/></svg></div>
+        <p class="cstep__txt"><strong><i>2.</i> Check Your Messages</strong>We'll text you on <b>iMessage / SMS</b> in the next few minutes. Reply to that text to confirm you'll be there.</p>
+      </article>
+      <article class="cstep">
+        <div class="cstep__icon"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="29" fill="#1f5fd6"/><rect x="16" y="19" width="32" height="28" rx="4" fill="#fff"/><path d="M16 23a4 4 0 0 1 4-4h24a4 4 0 0 1 4 4v4H16z" fill="#ef4444"/><path d="M24 15v7M40 15v7" stroke="#fff" stroke-width="3" stroke-linecap="round"/><rect x="20.5" y="31" width="5" height="4.5" rx="1" fill="#1f5fd6"/><rect x="29.5" y="31" width="5" height="4.5" rx="1" fill="#1f5fd6"/><rect x="38.5" y="31" width="5" height="4.5" rx="1" fill="#1f5fd6"/><rect x="20.5" y="38" width="5" height="4.5" rx="1" fill="#1f5fd6"/><rect x="29.5" y="38" width="5" height="4.5" rx="1" fill="#1f5fd6"/><rect x="38.5" y="38" width="5" height="4.5" rx="1" fill="#1f5fd6"/></svg></div>
+        <p class="cstep__txt"><strong><i>3.</i> Add It To Your Calendar</strong>In the confirmation email, tap <b>"Add to calendar"</b> so you don't miss your call with Ricky.</p>
+      </article>
     </div>
 
-    <h2 class="step" data-fit="booked"><b>Step #2:</b> Go Through Our FAQs</h2>
+    <h2 class="step" data-fit="booked"><b>Step #3:</b> Go Through Our FAQs</h2>
 
     <div class="faqs">
       <section class="faq">
@@ -1108,7 +1108,7 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
       </section>
     </div>
 
-    <h2 class="step" data-fit="booked"><b>Step #3:</b> See My Own Results</h2>
+    <h2 class="step" data-fit="booked"><b>Step #4:</b> See My Own Results</h2>
 
     <!-- Ricky's own results. Files live in assets/ricky/ -->
     <section class="receipts" aria-label="Ricky's results">
@@ -1195,11 +1195,6 @@ const CONFIG = {
   // Discord invite link for the button on /not-qualified. Leave "" to tell them to check their email + SMS.
   discordUrl: "https://discord.gg/G259ppJKRA",
 
-  // How the "Confirm In Gmail" button on /booked finds the booking confirmation email (spam and
-  // promotions included): anything from this address, OR anything with these words in the subject.
-  // Keep the words in the subject of the calendar's confirmation email.
-  confirmFrom: "ricky@ytd.rickyshoffner.com",
-  confirmSubject: "Strategy Call",
 
   // GoHighLevel calendar shown on page 2: the calendar's booking link, e.g.
   // "https://api.leadconnectorhq.com/widget/booking/AbC123…" (Calendars → the calendar's ⋮ → Share → Permanent link).
@@ -1465,26 +1460,6 @@ function route() {
   toast.active(VIEW === "optin");
   if (VIEW === "optin") warmUpNextPage();
   if (VIEW === "apply" || VIEW === "apply2") warmUpNextPage([CONFIG.videos.nextSteps], false);
-  if (VIEW === "booked") setupConfirmButton();
-}
-
-// "Confirm In Gmail" / "Confirm In Outlook" open their email on the web (phones too), so it works the same
-// everywhere. Gmail searches every folder (in:anywhere covers Spam and Promotions) in the account they
-// booked with (authuser picks it when several are signed in). Outlook on the web can't be opened on a
-// search, so it opens their inbox: Outlook.com for personal addresses, Microsoft 365 for work ones.
-function setupConfirmButton() {
-  const email = (lead.email || "").trim().toLowerCase(), domain = email.split("@")[1] || "";
-  // { } is Gmail's OR: from our address, or the confirmation's subject words (whoever sent it).
-  const search = encodeURIComponent(`in:anywhere {from:${CONFIG.confirmFrom} subject:"${CONFIG.confirmSubject}"}`).replace(/%20/g, "+");
-  const gmail = "https://mail.google.com/mail/" + (email ? "?authuser=" + encodeURIComponent(email) : "u/0/") + "#search/" + search;
-  // Through Google's sign-in, because a plain link loses the "#search/…" part when someone has to log in
-  // first (common on phones). Google keeps it inside "continue" and sends them on after sign-in; anyone
-  // already signed in goes straight through (passive=true). Email picks the account to sign in with.
-  $("#confirm-gmail").href = "https://accounts.google.com/ServiceLogin?" + new URLSearchParams({
-    service: "mail", passive: "true", ...(email ? { Email: email } : {}), continue: gmail,
-  });
-  const personal = !domain || /^(outlook|hotmail|live|msn)\./.test(domain) || /^(gmail|googlemail|yahoo|icloud|me|mac|aol|proton)\./.test(domain);
-  $("#confirm-outlook").href = personal ? "https://outlook.live.com/mail/0/" : "https://outlook.office.com/mail/";
 }
 
 // Page 1 quietly loads the VSL player and the booking calendar in hidden frames, 10 seconds in or as soon
@@ -1887,8 +1862,7 @@ if (CONFIG.discordUrl) {
 }
 
 /* ---------- Analytics: button clicks after the application (see /admin → Pages) ---------- */
-[["#nq-discord", "s:nq_discord"], ["#view-notqualified .yt__btn", "s:nq_youtube"],
- ["#confirm-gmail", "s:confirm_gmail"], ["#confirm-outlook", "s:confirm_outlook"]]
+[["#nq-discord", "s:nq_discord"], ["#view-notqualified .yt__btn", "s:nq_youtube"]]
   .forEach(([sel, metric]) => $(sel)?.addEventListener("click", () => analytics.once(metric, { now: true })));
 
 /* ---------- Results galleries (tap an image to see it bigger) ---------- */

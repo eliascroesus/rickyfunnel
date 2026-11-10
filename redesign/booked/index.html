@@ -22,24 +22,29 @@
   <div class="wrap">
     <h1 class="warn"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2 1 21h22L12 2z"/><path d="M12 9v5m0 3v.5" stroke="#070707" stroke-width="2.4" stroke-linecap="round"/></svg><span>Wait! Your Call Is <span class="accent">NOT Confirmed</span> Yet</span></h1>
 
-    <h2 class="step-h"><b>Step #1 of 2:</b> Watch This <span class="accent">2&#8209;Minute</span> Video For Next Steps</h2>
+    <h2 class="step-h"><b>Step #1 of 3:</b> Watch This <span class="accent">2&#8209;Minute</span> Video For Next Steps</h2>
     <div class="vslframe" id="next-steps">
       <div class="vph"><span class="play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8z"/></svg></span><span class="vtxt">Loading video…</span></div>
     </div>
 
-    <h2 class="step-h step-h--gap"><b>Step #2 of 2:</b> Accept The Call &amp; Watch The FAQs</h2>
-    <!-- Opens their inbox at the confirmation email (spam included). The links are set by the script from their email. -->
-    <div class="confirm">
-      <a class="confirm__btn" id="confirm-gmail" href="https://mail.google.com/mail/u/0/#search/in%3Aanywhere+subject%3A%22Strategy+Call%22" target="_blank" rel="noopener">
-        <svg viewBox="52 42 88 66" aria-hidden="true"><path fill="#4285f4" d="M58 108h14V74L52 59v43c0 3.32 2.69 6 6 6"/><path fill="#34a853" d="M120 108h14c3.32 0 6-2.69 6-6V59l-20 15"/><path fill="#fbbc04" d="M120 48v26l20-15v-8c0-7.42-8.47-11.65-14.4-7.2"/><path fill="#ea4335" d="M72 74V48l24 18 24-18v26L96 92"/><path fill="#c5221f" d="M52 51v8l20 15V48l-5.6-4.2c-5.94-4.45-14.4-.22-14.4 7.2"/></svg>
-        <span class="confirm__label"><small>Confirm In </small>Gmail</span>
-      </a>
-      <a class="confirm__btn" id="confirm-outlook" href="https://outlook.live.com/mail/0/" target="_blank" rel="noopener">
-        <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="12" y="6" width="17" height="20" rx="2" fill="#28a8ea"/><path d="M12 12l8.5 5.5L29 12" fill="none" stroke="#fff" stroke-width="1.6"/><rect x="3" y="9" width="14" height="14" rx="2" fill="#0364b8"/><ellipse cx="10" cy="16" rx="3.3" ry="4" fill="none" stroke="#fff" stroke-width="2"/></svg>
-        <span class="confirm__label"><small>Confirm In </small>Outlook</span>
-      </a>
+    <h2 class="step-h step-h--gap"><b>Step #2 of 3:</b> Confirm Your Call <span class="accent">Now</span></h2>
+    <!-- Three things to do so the call is confirmed (replaced the Gmail / Outlook buttons) -->
+    <div class="csteps">
+      <article class="cstep">
+        <div class="cstep__icon"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="4" y="8" width="56" height="48" rx="13" fill="#4da3ff"/><rect x="14" y="21" width="34" height="24" rx="3" fill="#fff" stroke="#0b1b33" stroke-width="2.5"/><path d="M14.5 22.5 31 34.5l16.5-12" fill="none" stroke="#0b1b33" stroke-width="2.5" stroke-linejoin="round"/><circle cx="50" cy="15" r="7" fill="#ef4444" stroke="#fff" stroke-width="2"/></svg></div>
+        <p class="cstep__txt"><strong><i>1.</i> Confirm Your Email</strong>Open your email (check Spam &amp; Promotions too) and reply <b>"Yes"</b> to the confirmation email for your call.</p>
+      </article>
+      <article class="cstep">
+        <div class="cstep__icon"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 7C17.1 7 5 16.8 5 29c0 6.8 3.7 12.8 9.6 16.9L11.5 57l12.4-6.3c2.6.6 5.3 1 8.1 1 14.9 0 27-9.9 27-22S46.9 7 32 7z" fill="#34c759"/><path d="M19 23.5h26M19 30.5h26M19 37.5h17" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/></svg></div>
+        <p class="cstep__txt"><strong><i>2.</i> Check Your Messages</strong>We'll text you on <b>iMessage / SMS</b> in the next few minutes. Reply to that text to confirm you'll be there.</p>
+      </article>
+      <article class="cstep">
+        <div class="cstep__icon"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="29" fill="#1f5fd6"/><rect x="16" y="19" width="32" height="28" rx="4" fill="#fff"/><path d="M16 23a4 4 0 0 1 4-4h24a4 4 0 0 1 4 4v4H16z" fill="#ef4444"/><path d="M24 15v7M40 15v7" stroke="#fff" stroke-width="3" stroke-linecap="round"/><rect x="20.5" y="31" width="5" height="4.5" rx="1" fill="#1f5fd6"/><rect x="29.5" y="31" width="5" height="4.5" rx="1" fill="#1f5fd6"/><rect x="38.5" y="31" width="5" height="4.5" rx="1" fill="#1f5fd6"/><rect x="20.5" y="38" width="5" height="4.5" rx="1" fill="#1f5fd6"/><rect x="29.5" y="38" width="5" height="4.5" rx="1" fill="#1f5fd6"/><rect x="38.5" y="38" width="5" height="4.5" rx="1" fill="#1f5fd6"/></svg></div>
+        <p class="cstep__txt"><strong><i>3.</i> Add It To Your Calendar</strong>In the confirmation email, tap <b>"Add to calendar"</b> so you don't miss your call with Ricky.</p>
+      </article>
     </div>
-    <p class="confirm-note">Can't find the email? <b>Check Spam and Promotions.</b></p>
+
+    <h2 class="step-h step-h--gap"><b>Step #3 of 3:</b> Watch The FAQs</h2>
     <div class="vid-grid" id="faq-videos"></div>
   </div>
 </header>
