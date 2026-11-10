@@ -43,7 +43,8 @@ const CONFIG = {
 const CONTACT_QUESTIONS = [
   { key: "name", type: "text", title: "First, what's your full name?", placeholder: "Full name", autocomplete: "name" },
   { key: "email", type: "email", title: "What's your email?", placeholder: "name@example.com", autocomplete: "email" },
-  { key: "phone", type: "phone", title: "And your phone number?", placeholder: "Phone number" },
+  { key: "phone", type: "phone", title: "And your phone number?", placeholder: "Phone number",
+    consent: "By submitting, you agree to receive emails, calls and text messages (including automated ones) from Ricky Shoffner about the free Discord, your application and Ricky's free and paid programs, at the email and number you entered. Consent is not a condition of any purchase. Msg frequency varies. Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help. See our <a href=\"/privacy\">Privacy Policy</a> and <a href=\"/terms\">Terms</a>." },
 ];
 const QUESTIONS = [
   { key: "situation", type: "choice", title: "Which of these best describes your situation right now?",
@@ -383,7 +384,7 @@ if (PAGE === "apply2") {
         : q.type === "phone"
           ? `<div class="phone"><select class="select" name="cc" aria-label="Country code">${COUNTRY_OPTIONS}</select><input class="input" id="${id}" name="phone" type="tel" autocomplete="tel-national" placeholder="${esc(q.placeholder)}"></div>${ok}`
           : `<input class="input" id="${id}" name="${q.key}" type="${q.type === "email" ? "email" : "text"}" placeholder="${esc(q.placeholder || "")}"${q.autocomplete ? ` autocomplete="${q.autocomplete}"` : ""}>${ok}`;
-    return `<div class="q" data-i="${i}" hidden>${count}<label class="q__title" id="${id}-t" for="${id}">${esc(q.title)}</label>${q.help ? `<p class="q__help">${esc(q.help)}</p>` : ""}${field}<p class="q__err" hidden></p></div>`;
+    return `<div class="q" data-i="${i}" hidden>${count}<label class="q__title" id="${id}-t" for="${id}">${esc(q.title)}</label>${q.help ? `<p class="q__help">${esc(q.help)}</p>` : ""}${field}<p class="q__err" hidden></p>${q.consent ? `<p class="consent consent--left">${q.consent}</p>` : ""}</div>`;
   }).join("");
   const stepEls = $$(".q", form);
   if (!knowThem) phone = phoneField(form.cc, form.phone);
