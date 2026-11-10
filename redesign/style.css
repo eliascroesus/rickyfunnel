@@ -414,11 +414,7 @@ footer p + p { margin-top: 10px; }
 footer p b { color: var(--muted); }
 footer a { color: inherit; }
 footer .foot-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px; margin-bottom: 16px; font-size: 13px; font-weight: 700; color: var(--muted); }
-/* Text-message consent under the sign-up buttons */
-.consent { margin: 12px 0 0; font-size: 11px; line-height: 1.5; color: #6b7280; text-align: center; }
-.consent a { color: inherit; }
-.consent--left { text-align: left; margin: 0 0 15px; }
-.q .consent--left { margin: 14px 0 0; }
+
 .has-sticky footer { padding-bottom: 110px; }
 
 /* ---------- Enlarged results image ---------- */
