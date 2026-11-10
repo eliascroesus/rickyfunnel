@@ -18,7 +18,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Montserrat:wght@800&display=swap">
 <link rel="stylesheet" href="/redesign/style.css">
 </head>
 <body data-page="discord">
@@ -26,7 +26,7 @@
 
 <header class="hero">
   <div class="wrap">
-    <h1>Discover The <span class="accent">YouTube Shorts Method</span> That Took Me From <span class="accent">$87 To $10K In 3 Days</span></h1>
+    <h1 class="headline-main">Discover The <span class="accent">YouTube Shorts Method</span> That Took Me From <span class="accent">$87 To $10K In 3 Days</span></h1>
 
     <form class="form-card" id="optin-form" novalidate>
       <h2>Join The <span class="hl">FREE</span> Discord</h2>
@@ -48,6 +48,16 @@
       <p class="error" id="optin-error" role="alert" hidden></p>
       <button class="btn btn--block" type="submit">Submit For Discord Access <span>→</span></button>
     </form>
+
+    <!-- Same bar as the live /discord page, here between the form and the results -->
+    <div class="scarcity" aria-label="Spots remaining">
+      <div class="scarcity__row">
+        <span class="pill">Limited free access</span>
+        <span class="spots">3 Spots Left</span>
+      </div>
+      <div class="meter"><span></span></div>
+      <small><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>Spots moving fast…</small>
+    </div>
   </div>
 </header>
 

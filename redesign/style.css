@@ -126,6 +126,31 @@ h2 { font-size: clamp(29px, 4.8vw, 48px); font-weight: 900; line-height: 1.08; l
   .guarantee--under { margin-top: 18px; }
   .guarantee svg { width: 34px; height: 34px; }
 }
+/* /redesign/discord headline: the same font, size and line spacing as the live /discord page */
+.hero h1.headline-main {
+  font-family: "Montserrat", "Arial Black", "Helvetica Neue", Arial, sans-serif;
+  font-size: clamp(1.7rem, 4.4vw, 2.6rem); font-weight: 800; line-height: 1.15; letter-spacing: normal;
+  max-width: 30ch; text-wrap: balance;
+}
+/* "Limited free access · 3 Spots Left" bar (as on the live /discord page), under the form */
+.scarcity {
+  width: 100%; max-width: 540px; margin: 22px auto 0; padding: 10px 12px; display: grid; gap: 8px; text-align: left;
+  background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .12); border-radius: 12px;
+}
+.scarcity__row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.pill {
+  font-size: .62rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  border: 1px solid rgba(var(--accent-rgb), .55); color: var(--accent); border-radius: 999px; padding: 3px 9px;
+}
+.spots { font-weight: 700; font-size: .85rem; font-variant-numeric: tabular-nums; }
+.meter { height: 8px; border-radius: 999px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+.meter span {
+  display: block; height: 100%; width: 88%; border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), #9fd3ff); animation: fill 1.6s cubic-bezier(.2, .7, .2, 1);
+}
+@keyframes fill { from { width: 62%; } }
+.scarcity small { color: var(--muted); font-size: .72rem; display: flex; align-items: center; gap: 4px; }
+.scarcity small svg { width: 12px; height: 12px; color: #f7c948; }
 /* "Step #1: …" headings */
 .step-h { font-size: clamp(17px, 2.3vw, 25px); font-weight: 800; line-height: 1.3; letter-spacing: -.3px; max-width: 900px; margin: 0 auto 18px; text-wrap: balance; text-shadow: 0 2px 18px rgba(0, 0, 0, .75); }
 .step-h b { color: var(--accent-bright); font-weight: 900; }
