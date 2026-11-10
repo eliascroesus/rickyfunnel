@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- The previous design of the funnel, kept at /old/discord, /old/apply, /old/apply-2, /old/booked and
+     /old/not-qualified. The live pages are /discord, /apply, /apply-2 and /booked (folders of the same name).
+     Not counted on /admin, kept out of search results, and its leads are marked "Old V1" / "Old V2". -->
+<meta name="robots" content="noindex">
 <title>YouTube Dropshipping Funnel</title>
 <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="icon" type="image/png" href="/favicon.png">
@@ -32,7 +36,7 @@
 <script>
   // Pick the page from the URL before anything draws, so /apply never flashes page 1.
   (function () {
-    var pages = { "/discord": "optin", "/apply": "apply", "/apply-2": "apply2", "/booked": "booked", "/not-qualified": "notqualified" };
+    var pages = { "/old/discord": "optin", "/old/apply": "apply", "/old/apply-2": "apply2", "/old/booked": "booked", "/old/not-qualified": "notqualified" };
     var path = location.pathname.replace(/\/index\.html$/, "/").replace(/\.html$/, "").replace(/(.)\/+$/, "$1");
     // "/" sends people to the Discord opt-in at /discord, keeping ?utm_… (vercel.json does this before the
     // page loads; this is the backup).
@@ -1163,8 +1167,6 @@ textarea.tf__input { resize: none; overflow: hidden; min-height: calc(1.35em + 1
 
 <!-- Name, email and phone checks, shared with the embeddable form (embed.html). -->
 <script src="/assets/lead-form.js"></script>
-<!-- Funnel analytics for /admin: visits, which link they came from, steps and video watching. -->
-<script src="/assets/track.js"></script>
 <!-- Vimeo's player library (MIT), kept in the repo so the videos never depend on another site. -->
 <script src="/assets/vimeo-player.min.js"></script>
 <script>
@@ -1440,8 +1442,8 @@ $("#unmute")?.addEventListener("click", e => { e.currentTarget.hidden = true; })
 
 /* ---------- Pages: / → /apply or /apply-2 (A/B) → /booked ---------- */
 // On Vercel, vercel.json serves this same file at every path; the path picks the page.
-const PAGES = { "/discord": "optin", "/apply": "apply", "/apply-2": "apply2", "/booked": "booked", "/not-qualified": "notqualified" };
-const PATHS = { optin: "/discord", apply: "/apply", apply2: "/apply-2", booked: "/booked", notqualified: "/not-qualified" };
+const PAGES = { "/old/discord": "optin", "/old/apply": "apply", "/old/apply-2": "apply2", "/old/booked": "booked", "/old/not-qualified": "notqualified" };
+const PATHS = { optin: "/old/discord", apply: "/old/apply", apply2: "/old/apply-2", booked: "/old/booked", notqualified: "/old/not-qualified" };
 // Old #apply / #booked links → the matching path.
 if (["#apply", "#booked"].includes(location.hash) && location.protocol !== "file:") {
   location.replace(PATHS[location.hash.slice(1)] + location.search);
@@ -1574,6 +1576,7 @@ function sendLead(data, type = "optin") {
   const body = new URLSearchParams({
     version: pageVersion(),
     ...data,
+    ...{ version: "Old " + (data.version || pageVersion()) },   // these pages are the old design (kept at /old/…)
     type,
     funnel: document.title,
     page_url: location.href.split("#")[0],

@@ -1,27 +1,142 @@
 {
   "trailingSlash": false,
   "redirects": [
-    { "source": "/", "destination": "/discord", "permanent": false }
+    {
+      "source": "/",
+      "destination": "/discord",
+      "permanent": false
+    },
+    {
+      "source": "/redesign/:path*",
+      "destination": "/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/not-qualified",
+      "destination": "/old/not-qualified",
+      "permanent": false
+    }
   ],
   "rewrites": [
-    { "source": "/discord", "destination": "/index.html" },
-    { "source": "/embed", "destination": "/embed.html" },
-    { "source": "/privacy", "destination": "/privacy.html" },
-    { "source": "/terms", "destination": "/terms.html" },
-    { "source": "/disclaimer", "destination": "/disclaimer.html" },
-    { "source": "/apply", "destination": "/index.html" },
-    { "source": "/apply-2", "destination": "/index.html" },
-    { "source": "/booked", "destination": "/index.html" },
-    { "source": "/not-qualified", "destination": "/index.html" },
-    { "source": "/redesign/discord", "destination": "/redesign/discord/index.html" },
-    { "source": "/redesign/apply", "destination": "/redesign/apply/index.html" },
-    { "source": "/redesign/apply-2", "destination": "/redesign/apply-2/index.html" },
-    { "source": "/redesign/booked", "destination": "/redesign/booked/index.html" },
-    { "source": "/admin", "destination": "/admin.html" },
-    { "source": "/go/:slug", "destination": "/api/go?slug=:slug" }
+    {
+      "source": "/discord",
+      "destination": "/discord/index.html"
+    },
+    {
+      "source": "/apply",
+      "destination": "/apply/index.html"
+    },
+    {
+      "source": "/apply-2",
+      "destination": "/apply-2/index.html"
+    },
+    {
+      "source": "/booked",
+      "destination": "/booked/index.html"
+    },
+    {
+      "source": "/old/discord",
+      "destination": "/old/index.html"
+    },
+    {
+      "source": "/old/apply",
+      "destination": "/old/index.html"
+    },
+    {
+      "source": "/old/apply-2",
+      "destination": "/old/index.html"
+    },
+    {
+      "source": "/old/booked",
+      "destination": "/old/index.html"
+    },
+    {
+      "source": "/old/not-qualified",
+      "destination": "/old/index.html"
+    },
+    {
+      "source": "/embed",
+      "destination": "/embed.html"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/privacy.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/terms.html"
+    },
+    {
+      "source": "/disclaimer",
+      "destination": "/disclaimer.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/go/:slug",
+      "destination": "/api/go?slug=:slug"
+    }
   ],
   "headers": [
-    { "source": "/admin", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }, { "key": "Cache-Control", "value": "no-store" }] },
-    { "source": "/admin.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] }
+    {
+      "source": "/admin",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/admin.html",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
+        }
+      ]
+    },
+    {
+      "source": "/assets/site/fonts/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/assets/ricky/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/(assets/vimeo-player.min.js|assets/site/logo-56.png|favicon.ico|favicon.png|apple-touch-icon.png|og-image.jpg)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/old/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
+        }
+      ]
+    }
   ]
 }

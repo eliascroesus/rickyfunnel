@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Call Booked | Ricky</title>
 <meta name="description" content="Your call with Ricky is booked. Watch the video and confirm your call.">
-<!-- Redesign preview: kept out of search results until it replaces the live pages. -->
-<meta name="robots" content="noindex">
 <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
-<link rel="icon" type="image/png" href="/favicon.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Montserrat:wght@800&display=swap">
-<link rel="stylesheet" href="/redesign/style.css">
+<link rel="preload" href="/assets/site/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<!-- Connect to Vimeo early so the video starts sooner -->
+<link rel="preconnect" href="https://player.vimeo.com">
+<link rel="preconnect" href="https://i.vimeocdn.com">
+<link rel="preconnect" href="https://f.vimeocdn.com">
+<link rel="dns-prefetch" href="https://vimeo.com">
+<link rel="stylesheet" href="/assets/site/style.css">
 </head>
 <body data-page="booked">
 
@@ -68,17 +68,17 @@
           <p>I was working for <b>$16 an hour</b> and looking for a way out.</p></div>
       </article>
       <article class="story-card">
-        <img loading="lazy" src="/redesign/proof/label-roll.webp" width="640" height="853" alt="A roll of printed shipping labels">
+        <img loading="lazy" src="/assets/ricky/proof/label-roll.webp" width="640" height="853" alt="A roll of printed shipping labels">
         <div class="txt"><div class="when">Starting with $87</div>
           <p>I started with <b>$87</b>. I paid a mentor $1,500 to teach me and got scammed, so I figured it out myself.</p></div>
       </article>
       <article class="story-card">
-        <img loading="lazy" src="/redesign/proof/orders-to-ship.webp" width="640" height="853" alt="Orders stacked up and ready to ship">
+        <img loading="lazy" src="/assets/ricky/proof/orders-to-ship.webp" width="640" height="853" alt="Orders stacked up and ready to ship">
         <div class="txt"><div class="when">40+ products later</div>
           <p>I tested <b>40+ products</b> before one took off. Then my Shorts hit <b>18M views in a month</b>, with $0 ad spend.</p></div>
       </article>
       <article class="story-card">
-        <img loading="lazy" src="/redesign/proof/play-buttons-car.webp" width="640" height="853" alt="Two silver YouTube Play Buttons">
+        <img loading="lazy" src="/assets/ricky/proof/play-buttons-car.webp" width="640" height="853" alt="Two silver YouTube Play Buttons">
         <div class="txt"><div class="when">Today</div>
           <p><b>$10K in 3 days</b>, 91M views in a single month and two Silver Play Buttons.</p></div>
       </article>
@@ -88,7 +88,7 @@
 
 <footer>
   <div class="wrap">
-    <div class="brand"><img src="/favicon.png" alt="">Ricky</div>
+    <div class="brand"><img src="/assets/site/logo-56.png" width="28" height="28" loading="lazy" alt="">Ricky</div>
     <nav class="foot-nav"><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a><a href="/disclaimer">Earnings Disclaimer</a><a href="mailto:ricky@ytd.rickyshoffner.com">Contact</a></nav>
     <p><b>Earnings Disclaimer:</b> The results shown are Ricky's own and are <b>not typical</b>. <b>Most people who try dropshipping or e-commerce make little or no money, and many lose money.</b> We don't have data showing what a typical student earns, so don't expect results like these. Sales figures shown are revenue, not profit, before costs like products, shipping, fees, ads, refunds and taxes. We do not promise or guarantee that you will make any money; your results depend on your effort, skills, experience, budget and market conditions, and starting a business involves financial risk. Our content is for education only and is not financial, legal or tax advice. <a href="/disclaimer">Read the full Earnings Disclaimer</a>.</p>
     <p>This site is not part of the Facebook, Instagram or YouTube websites, or of Meta Platforms, Inc. or Google LLC, and is not endorsed by them in any way. Facebook and Instagram are trademarks of Meta Platforms, Inc. YouTube is a trademark of Google LLC.</p>
@@ -98,8 +98,10 @@
 
 <dialog class="zoom" id="zoom"><img alt=""></dialog>
 
-<script src="/assets/vimeo-player.min.js"></script>
-<script src="/assets/lead-form.js"></script>
-<script src="/redesign/funnel.js"></script>
+<!-- Analytics for /admin -->
+<script defer src="/assets/track.js"></script>
+<script defer src="/assets/vimeo-player.min.js"></script>
+<script defer src="/assets/lead-form.js"></script>
+<script defer src="/assets/site/funnel.js"></script>
 </body>
 </html>

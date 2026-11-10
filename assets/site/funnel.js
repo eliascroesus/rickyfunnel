@@ -1,32 +1,32 @@
-/* Ricky funnel, redesign (Jean Ivan's black layout): shared by /redesign/discord, /redesign/apply, /redesign/apply-2
-   and /redesign/booked (each page says which one it is in <body data-page="…">). Leads go to the same Google Sheet and
-   from there to GoHighLevel, with "Redesign V1" / "Redesign V2" in the sheet's Version column so they can be told
-   apart from the live pages' leads (V1, V2).
-   Page 2 is A/B tested like the live funnel: /redesign/apply (V1) = the form beside the calendar,
-   /redesign/apply-2 (V2) = one question at a time.
-   Needs /assets/lead-form.js (phone rules, tidyName, emailOk) and, on the video pages, /assets/vimeo-player.min.js first. */
+/* Ricky funnel: shared by /discord, /apply, /apply-2 and /booked (each page says which one it is in
+   <body data-page="…">). Leads go to the Google Sheet and from there to GoHighLevel. Page 2 is A/B tested:
+   /apply (V1) = the form beside the calendar, /apply-2 (V2) = one question at a time.
+   The previous design of these pages is kept at /old/discord, /old/apply, … (old/index.html).
+   Needs /assets/lead-form.js (phone rules, tidyName, emailOk), /assets/track.js (analytics for /admin) and, on the
+   video pages, /assets/vimeo-player.min.js first. */
 
 const CONFIG = {
   // Same Apps Script as the live funnel (CONFIG.leadSheetUrl in /index.html).
   leadSheetUrl: "https://script.google.com/macros/s/AKfycbzhPVpu96QKl-C44twFcFtajEkUGAh5MM2aHBIC6n5HfCSuqZx-SRiqSth_KrkV-4jC/exec",
   // The sheet's Version column: which page 2 the lead got, so the two can be compared.
-  versions: { apply: "Redesign V1", apply2: "Redesign V2" },
-  // A/B test: share of new opt-ins sent to /redesign/apply (V1, form beside the calendar). The rest go to
-  // /redesign/apply-2 (V2, one question at a time). Each visitor keeps the one they got.
+  versions: { apply: "V1", apply2: "V2" },
+  // A/B test: share of new opt-ins sent to /apply (V1, form beside the calendar). The rest go to
+  // /apply-2 (V2, one question at a time). Each visitor keeps the one they got.
   // ?v=1 or ?v=2 in a link picks one; ?v=reset forgets it.
   abSplitApply: 0.5,
-  pages: { discord: "/redesign/discord", apply: "/redesign/apply", apply2: "/redesign/apply-2", booked: "/redesign/booked" },
+  pages: { discord: "/discord", apply: "/apply", apply2: "/apply-2", booked: "/booked" },
   videos: {
     vsl: "https://player.vimeo.com/video/1239908541",
     nextSteps: "https://player.vimeo.com/video/1240193952",   // thank-you video on /booked
   },
   // FAQ videos on /booked: [question, Vimeo link]. Ones without a link are left out.
+  // [question, Vimeo link, name on /admin]
   faqVideos: [
-    ["What's Inside YouTube Shorts Dropshipping?", "https://player.vimeo.com/video/1240230808"],
-    ["Is Ricky Legit?", "https://player.vimeo.com/video/1239910539"],
-    ["Will I Work With Ricky Or An Assistant?", "https://player.vimeo.com/video/1240230807"],
-    ["Can I Do This With A Full-Time Job?", "https://player.vimeo.com/video/1240230805"],
-    ["Is It Too Late To Start Dropshipping?", "https://player.vimeo.com/video/1240230806"],
+    ["What's Inside YouTube Shorts Dropshipping?", "https://player.vimeo.com/video/1240230808", "faqInside"],
+    ["Is Ricky Legit?", "https://player.vimeo.com/video/1239910539", "faqLegit"],
+    ["Will I Work With Ricky Or An Assistant?", "https://player.vimeo.com/video/1240230807", "faqWho"],
+    ["Can I Do This With A Full-Time Job?", "https://player.vimeo.com/video/1240230805", "faqTime"],
+    ["Is It Too Late To Start Dropshipping?", "https://player.vimeo.com/video/1240230806", "faqLate"],
   ],
   ghlCalendarUrl: "https://api.leadconnectorhq.com/widget/booking/1RHbUHkVYYcLuSFWawHy",
   discordUrl: "https://discord.gg/G259ppJKRA",
@@ -35,8 +35,8 @@ const CONFIG = {
   disqualify: ["Under $500", "I want to, but don't have the resources to fund my goals"],
 };
 
-// V2 (/redesign/apply-2), one question at a time (same questions as the live /apply-2).
-// Visitors who didn't come through /redesign/discord are asked for name, email and phone first.
+// V2 (/apply-2), one question at a time (same questions as the live /apply-2).
+// Visitors who didn't come through /discord are asked for name, email and phone first.
 const CONTACT_QUESTIONS = [
   { key: "name", type: "text", title: "First, what's your full name?", placeholder: "Full name", autocomplete: "name" },
   { key: "email", type: "email", title: "What's your email?", placeholder: "name@example.com", autocomplete: "email" },
@@ -54,7 +54,7 @@ const QUESTIONS = [
     options: ["$1,000 – $3,000", "$3,000 – $5,000", "I have a 650+ credit score", "I want to, but don't have the resources to fund my goals"] },
 ];
 
-// Results wall: Ricky's screenshots and photos (redesign/proof/NAME.webp, NAME-full.webp when tapped)
+// Results wall: Ricky's screenshots and photos (assets/ricky/proof/NAME.webp, NAME-full.webp when tapped)
 // and three short screen recordings (assets/ricky/NAME.mp4, playing muted on a loop).
 // [name, width, height, description for screen readers, caption under it ("" for none)]
 const PROOF = [
@@ -81,6 +81,9 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const PAGE = document.body.dataset.page;
+// Analytics for /admin (assets/track.js). If that file didn't load, these do nothing and the page works as usual.
+const analytics = window.rt || { start() {}, set() {}, once() {}, label: () => "", video: () => ({ view() {}, time() {}, ended() {} }) };
+const TRACK_PAGE = { discord: "optin", apply: "apply", apply2: "apply2", booked: "booked" }[PAGE] || PAGE;
 
 // Kept in the browser for 30 days (shared with the live funnel), so a reload keeps what they entered.
 const store = {
@@ -127,6 +130,14 @@ function abPage() {
   return page;
 }
 
+// The A/B version analytics counts things under: the page's own on page 2, else the one they were given at opt-in.
+function trackVersion() {
+  if (PAGE === "apply" || PAGE === "apply2") return CONFIG.versions[PAGE];
+  if (!lead.email) return "";
+  try { return CONFIG.versions[localStorage.getItem("ricky_redesign_ab")] || ""; } catch { return ""; }
+}
+analytics.start({ page: TRACK_PAGE, ver: trackVersion() });
+
 /* ---------- Send to the Google Sheet (and from there to GoHighLevel) ---------- */
 // type "optin" adds a row; "application" and "booked" fill in that person's row (matched by email).
 function sendLead(data, type = "optin") {
@@ -139,6 +150,7 @@ function sendLead(data, type = "optin") {
     page_url: location.href.split("#")[0],
     ...Object.fromEntries(UTM_KEYS.map(k => [k, tracking[k] || ""])),
     referrer: tracking.referrer || document.referrer,
+    source_link: analytics.label(),   // the /go/… link (or app/site) they came from, as on /admin
     device: /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? "Mobile" : "Desktop",
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
   });
@@ -157,21 +169,45 @@ const ICONS = {
   listen: '<svg viewBox="0 0 124 124" fill="currentColor" aria-hidden="true"><path d="M15.9 51.4v20.6c0 2.8 2.3 5.1 5.2 5.1h15.4l16.9 16.9c3.2 3.3 8.8.9 8.8-3.6V33c0-4.6-5.6-6.9-8.8-3.7L36.5 46.3H21.1c-2.9 0-5.2 2.3-5.2 5.1z"/><path d="M77.9 44.7c-2.2-2-5.4-.2-5.4 2.8v1.3c0 1 .4 1.9 1 2.7 2.2 2.9 3.5 6.3 3.5 10 0 3.7-1.3 7.2-3.5 10-.6.8-1 1.8-1 2.8v1.7c0 3 3.1 4.8 5.3 2.8 4.6-4.2 7.6-10.3 7.6-17.1 0-6.8-2.9-12.9-7.5-17z"/><path d="M72.5 22.9v1c0 2 1.3 3.7 3.1 4.4 13.3 5.3 22.7 18.3 22.7 33.4s-9.4 28.1-22.7 33.4c-1.8.8-3.1 2.4-3.1 4.4v1c0 3.3 3.3 5.5 6.3 4.4 17.4-6.6 29.8-23.5 29.8-43.2S96.2 25.2 78.8 18.5c-3-1.2-6.3 1.2-6.3 4.4z"/></svg>',
 };
 const players = [];
-function vimeoEmbedUrl(url, custom, autoplay) {
+function vimeoEmbedUrl(url, custom, autoplay, start) {
   const u = new URL(url);
-  const extra = custom ? { controls: 0, ...(autoplay ? { autoplay: 1, muted: 1 } : {}) } : {};
+  const extra = { ...(custom ? { controls: 0 } : {}), ...(autoplay && custom ? { autoplay: 1, muted: 1 } : start ? { autoplay: 1 } : {}) };
   Object.entries({ ...VIMEO_CLEAN, ...extra }).forEach(([k, v]) => u.searchParams.set(k, v));
   return u;
 }
-// Puts a Vimeo video in a .vslframe box. autoplay = starts muted with "Click to unmute" (the VSL and thank-you video).
-function mountVideo(box, url, { autoplay = false, title = "Video" } = {}) {
+// Puts a Vimeo video in a .vslframe box. autoplay = starts muted with "Click to unmute" (the VSL and thank-you video);
+// start = plays with sound straight away (a video someone just clicked). name = how /admin calls it.
+function mountVideo(box, url, { autoplay = false, start = false, title = "Video", name = "" } = {}) {
   if (!box || !url || box.classList.contains("has-embed")) return;
   box.classList.add("has-embed");
   const custom = !!window.Vimeo;   // without the player library Vimeo keeps its own controls
-  box.innerHTML = `<iframe src="${esc(vimeoEmbedUrl(url, custom, autoplay).href)}" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen title="${esc(title)}"${autoplay ? "" : ' loading="lazy"'}></iframe>`;
-  if (custom) videoControls(box, autoplay);
+  box.innerHTML = `<iframe src="${esc(vimeoEmbedUrl(url, custom, autoplay, start).href)}" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen title="${esc(title)}"${autoplay || start ? "" : ' loading="lazy"'}></iframe>`;
+  if (custom) videoControls(box, autoplay, name);
 }
-function videoControls(box, autoplay) {
+// A video that only loads when it's clicked: Vimeo's still and a play button until then, so a page with several
+// videos doesn't start several players at once (the FAQ videos on /booked).
+function videoOnClick(box, url, title, name) {
+  if (!box || !url) return;
+  box.classList.add("vp", "is-paused", "vp--still");
+  box.innerHTML = `<button class="vp__hit" type="button" aria-label="Play: ${esc(title)}"></button><span class="vp__big" aria-hidden="true">${ICONS.play}</span>`;
+  const id = (url.match(/video\/(\d+)/) || [])[1];
+  const still = () => fetch("https://vimeo.com/api/oembed.json?width=960&url=" + encodeURIComponent("https://vimeo.com/" + id))
+    .then(r => r.ok ? r.json() : null)
+    .then(d => { if (d && d.thumbnail_url && box.classList.contains("vp--still")) box.style.backgroundImage = `url("${d.thumbnail_url.replace(/"/g, "%22")}")`; })
+    .catch(() => {});
+  if (id) {
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); still(); } }, { rootMargin: "300px 0px" });
+      io.observe(box);
+    } else still();
+  }
+  $(".vp__hit", box).addEventListener("click", () => {
+    box.classList.remove("vp", "is-paused", "vp--still");
+    box.style.backgroundImage = "";
+    mountVideo(box, url, { start: true, title, name });
+  }, { once: true });
+}
+function videoControls(box, autoplay, name) {
   const player = new Vimeo.Player(box.querySelector("iframe"));
   players.push(player);
   // No captions (Vimeo switches them on by itself during a muted autoplay).
@@ -193,6 +229,10 @@ function videoControls(box, autoplay) {
   box.classList.toggle("is-muted", autoplay);
   const listen = $(".vp__listen", box), fill = $(".vp__fill", box);
   let paused = true, muted = autoplay, duration = 0, touch = false, uiTimer = null;
+  // Analytics: who saw it, who watched with sound, and how far (muted autoplay doesn't count as watching).
+  const watch = analytics.video(name || "video");
+  watch.view();
+  player.on("timeupdate", d => watch.time(d.seconds, d.percent, d.duration, !muted && !paused));
   const showUi = () => { box.classList.add("show-ui"); clearTimeout(uiTimer); uiTimer = setTimeout(() => box.classList.remove("show-ui"), 2500); };
   const setMuted = m => { muted = m; box.classList.toggle("is-muted", m); player.setMuted(m).catch(() => {}); if (!m) player.setVolume(1).catch(() => {}); };
   const play = () => player.play().catch(() => {
@@ -217,6 +257,7 @@ function videoControls(box, autoplay) {
     box.classList.add("is-ended");
     if (listen) listen.hidden = true;
     player.pause().catch(() => {});
+    watch.ended(!muted);
   };
   const restart = () => { atEnd = false; box.classList.remove("is-ended"); player.setCurrentTime(0).catch(() => {}); };
   player.on("timeupdate", d => { if (!atEnd && d.duration > END_GAP * 2 && d.seconds >= d.duration - END_GAP) finish(); });
@@ -226,6 +267,7 @@ function videoControls(box, autoplay) {
   $(".vp__replay", box).addEventListener("click", () => { restart(); setMuted(false); play(); });
   player.on("play", () => {
     paused = false; box.classList.remove("is-paused");
+    player.getMuted().then(m => { muted = m; box.classList.toggle("is-muted", m); }).catch(() => {});
     players.forEach(p => { if (p !== player) p.pause().catch(() => {}); });   // one video at a time
   });
   player.on("pause", () => { paused = true; box.classList.add("is-paused"); });
@@ -256,7 +298,7 @@ function videoControls(box, autoplay) {
   });
 }
 /* ---------- Results wall (tap an image to see it bigger) ---------- */
-const PROOF_DIR = "/redesign/proof/", CLIP_DIR = "/assets/ricky/";
+const PROOF_DIR = "/assets/ricky/proof/", CLIP_DIR = "/assets/ricky/";
 $$("[data-proof]").forEach(wall => {
   wall.innerHTML = PROOF.map(([name, w, h, alt, cap]) => {
     const caption = cap ? `<span class="cap">${cap}</span>` : "";
@@ -327,7 +369,7 @@ const COUNTRY_OPTIONS = [["US", "+1", "🇺🇸"], ["CA", "+1", "🇨🇦"], ["G
   .map(([c, code, flag]) => `<option value="${code}" data-country="${c}">${flag} ${code}</option>`).join("");
 
 /* ======================================================================= */
-/* /redesign/discord: the opt-in                                  */
+/* /discord: the opt-in                                            */
 /* ======================================================================= */
 if (PAGE === "discord") {
   const form = $("#optin-form"), err = $("#optin-error");
@@ -349,16 +391,19 @@ if (PAGE === "discord") {
     form.name.setAttribute("aria-invalid", !name); if (!name) bad.push("your name");
     form.phone.setAttribute("aria-invalid", !p?.ok); if (!p?.ok) bad.push(p ? "a valid " + (p.country === "GB" ? "UK" : p.country) + " phone number (" + PHONE_RULES[p.country].hint + ")" : "a phone number");
     form.email.setAttribute("aria-invalid", !emailOk(email)); if (!emailOk(email)) bad.push("a valid email");
-    if (bad.length) { err.textContent = "Please add " + bad.join(", ") + "."; err.hidden = false; return; }
+    if (bad.length) { err.textContent = "Please add " + bad.join(", ") + "."; err.hidden = false; analytics.once("s:optin_error"); return; }
     err.hidden = true;
     lead = { name, email, phone: p.e164, phoneNational: form.phone.value.trim(), country: p.country };
     saveDraft();
     store.set("lead", lead);
     const next = abPage();
     sendLead({ name, email, phone: p.e164, country: p.country, version: CONFIG.versions[next] });
+    analytics.set({ ver: CONFIG.versions[next] });
+    analytics.once("s:optin", { now: true });
     try { sessionStorage.setItem("ricky_just_joined", "1"); } catch {}
     go(next);
   });
+  form.addEventListener("focusin", () => analytics.once("s:optin_start"));
   // Load the next page's video player and calendar in hidden frames once they start the form, so page 2 opens fast.
   form.addEventListener("focusin", () => setTimeout(() => {
     [vimeoEmbedUrl(CONFIG.videos.vsl, true, false).href, CONFIG.ghlCalendarUrl].filter(Boolean).forEach(src => {
@@ -372,15 +417,20 @@ if (PAGE === "discord") {
 }
 
 /* ======================================================================= */
-/* /redesign/apply-2 (V2): VSL, then one question at a time, then the calendar */
+/* /apply-2 (V2): VSL, then one question at a time, then the calendar           */
 /* ======================================================================= */
 if (PAGE === "apply" || PAGE === "apply2") {
   // They just joined: a short burst of gold and blue confetti, once.
   try { if (sessionStorage.getItem("ricky_just_joined")) { sessionStorage.removeItem("ricky_just_joined"); confetti(); } } catch {}
-  mountVideo($("#vsl"), CONFIG.videos.vsl, { autoplay: true, title: "Watch this first" });
+  mountVideo($("#vsl"), CONFIG.videos.vsl, { autoplay: true, title: "Watch this first", name: "vsl" });
   const nqBtn = $("#nq-discord"), nqYt = $("#nq-yt");
-  if (nqBtn) nqBtn.href = CONFIG.discordUrl;
-  if (nqYt) nqYt.href = CONFIG.youtubeUrl;
+  if (nqBtn) { nqBtn.href = CONFIG.discordUrl; nqBtn.addEventListener("click", () => analytics.once("s:nq_discord", { now: true })); }
+  if (nqYt) { nqYt.href = CONFIG.youtubeUrl; nqYt.addEventListener("click", () => analytics.once("s:nq_youtube", { now: true })); }
+}
+// Name, email and phone given on page 2 (visitors who didn't come through /discord) count as the opt-in.
+function optinOnPage2() {
+  analytics.set({ ver: CONFIG.versions[PAGE] });
+  analytics.once("s:optin", { now: true });
 }
 if (PAGE === "apply2") {
   const quiz = $("#quiz"), form = $("#quiz-form"), bar = $("#quiz-bar"), back = $("#quiz-back");
@@ -428,16 +478,18 @@ if (PAGE === "apply2") {
     err.hidden = true;
     answers[q.key] = value;
     if (["name", "email", "phone"].includes(q.key)) { lead[q.key] = value; store.set("lead", lead); }
+    else { analytics.once("s:apply_start"); analytics.once("q:a2:" + q.key); }
     const last = index === steps.length - 1;
     if (q.key === "phone") {
       // Name, email and phone given here count as the opt-in (a new row in the sheet, the Discord pipeline in GoHighLevel).
       sendLead({ name: lead.name, email: lead.email, phone: lead.phone, country: lead.country || "" });
+      optinOnPage2();
       initCalendar();
     } else if (lead.email && lead.phone) {
       // Each answer is saved as it's given (drop-offs show in the sheet). The last one carries "stage".
       const data = { name: lead.name || "", email: lead.email, ...answers };
       const out = last && CONFIG.disqualify.includes(answers.investment);
-      if (last) data.stage = out ? "not_qualified" : "applied";
+      if (last) { data.stage = out ? "not_qualified" : "applied"; analytics.once(out ? "s:not_qualified" : "s:applied", { now: true }); }
       const key = JSON.stringify(data);
       if (key !== sent) { sent = key; sendLead(data, "application"); }
     }
@@ -463,7 +515,7 @@ if (PAGE === "apply2") {
   });
   back.addEventListener("click", () => { if (index > 0) show(index - 1); });
   show(0);
-  if (knowThem) initCalendar();   // loads hidden now, so it's ready the moment the last answer is in
+  if (knowThem) calendarSoon(quiz);   // loads hidden in the background, so it's ready the moment the last answer is in
 }
 
 /* ---------- Confetti (about 2 seconds, skipped for people who turn motion off) ---------- */
@@ -501,10 +553,10 @@ function confetti() {
 }
 
 /* ======================================================================= */
-/* /redesign/apply (V1): VSL, then a short form beside the calendar (iClose style) */
+/* /apply (V1): VSL, then a short form beside the calendar (iClose style)        */
 /* ======================================================================= */
 // The calendar sits blurred and locked beside the form and opens once every answer is in. Visitors who didn't
-// come through /redesign/discord also give name, email and phone at the top; that counts as their opt-in.
+// come through /discord also give name, email and phone at the top; that counts as their opt-in.
 const BOOKER_FIELDS = ["motivation", "experience", "investment", "reason", "ready", "instagram"];
 if (PAGE === "apply") {
   const form = $("#apply-form"), cal = $("#booker-cal"), frameBox = $("#cal-frame");
@@ -532,6 +584,7 @@ if (PAGE === "apply") {
       lead = { ...c };
       store.set("lead", lead);
       sendLead({ name: c.name, email: c.email, phone: c.phone, country: c.country }, "optin");
+      optinOnPage2();
       initCalendar();
     }
     const a = answers(), done = Object.values(a).every(Boolean) && (knowThem || !!c);
@@ -550,17 +603,32 @@ if (PAGE === "apply") {
     timer = setTimeout(() => {
       const data = { name: lead.name || "", email: lead.email, ...a, stage: out ? "not_qualified" : "applied" }, key = JSON.stringify(data);
       if (key !== sent) { sent = key; sendLead(data, "application"); }
+      analytics.once(out ? "s:not_qualified" : "s:applied", { now: true });
       if (out) { $("#booker-body").hidden = true; $(".booker__steps").hidden = true; $("#nq").hidden = false; }
     }, 1500);
   };
   form.addEventListener("input", update);
   form.addEventListener("change", update);
+  // Analytics: which questions people answer (and how many start the form at all).
+  const counted = e => { const k = e.target.name; if (BOOKER_FIELDS.includes(k) && e.target.value.trim()) { analytics.once("s:apply_start"); analytics.once("q:a1:" + k); } };
+  form.addEventListener("input", counted);
+  form.addEventListener("change", counted);
   form.addEventListener("submit", e => e.preventDefault());
-  if (knowThem) initCalendar();   // loads behind the blur right away, so it's ready the moment the form is done
+  if (knowThem) calendarSoon(form);   // loads behind the blur in the background, so it's ready the moment the form is done
   update();
 }
 
 /* ---------- GoHighLevel calendar ---------- */
+// The calendar is the heaviest thing on the page, so the video goes first: it loads once the page has finished
+// loading (plus a moment), or as soon as they touch the form, whichever comes first. Only ever once.
+function calendarSoon(form) {
+  let started = false;
+  const start = () => { if (!started) { started = true; initCalendar(); } };
+  ["pointerdown", "focusin", "keydown"].forEach(ev => form.addEventListener(ev, start, { once: true, passive: true }));
+  const afterLoad = () => setTimeout(start, 2000);
+  if (document.readyState === "complete") afterLoad(); else addEventListener("load", afterLoad, { once: true });
+  setTimeout(start, 9000);   // even if something on the page is slow to finish loading
+}
 function initCalendar() {
   const frame = $("#cal-frame");
   if (!frame || !CONFIG.ghlCalendarUrl || !lead.email || frame.dataset.for === lead.email) return;
@@ -582,20 +650,18 @@ addEventListener("message", e => {
   if (!fromGhl || !/booking-complete/i.test(text)) return;
   bookingSent = true;
   sendLead({ name: lead.name || "", email: lead.email || "", phone: lead.phone || "" }, "booked");
+  analytics.once("s:booked", { now: true });
   store.set("booking", { bookedAt: Date.now() });
   setTimeout(() => go("booked"), 1500);
 });
 
 /* ======================================================================= */
-/* /redesign/booked                                                */
+/* /booked                                                         */
 /* ======================================================================= */
 if (PAGE === "booked") {
-  mountVideo($("#next-steps"), CONFIG.videos.nextSteps, { autoplay: true, title: "Next steps" });
-  const grid = $("#faq-videos");
-  grid.innerHTML = CONFIG.faqVideos.filter(([, url]) => url).map(([q], i) =>
-    `<article class="vid-card"><h3>${esc(q)}</h3><div class="vslframe" data-faq="${i}"></div></article>`).join("");
-  $$("[data-faq]", grid).forEach((box, i) => {
-    const [q, url] = CONFIG.faqVideos.filter(([, u]) => u)[i];
-    mountVideo(box, url, { title: q });
-  });
+  mountVideo($("#next-steps"), CONFIG.videos.nextSteps, { autoplay: true, title: "Next steps", name: "nextSteps" });
+  const faqs = CONFIG.faqVideos.filter(([, url]) => url), grid = $("#faq-videos");
+  grid.innerHTML = faqs.map(([q], i) => `<article class="vid-card"><h3>${esc(q)}</h3><div class="vslframe" data-faq="${i}"></div></article>`).join("");
+  // Each FAQ video loads its player only when it's clicked (Vimeo's still until then).
+  $$("[data-faq]", grid).forEach((box, i) => { const [q, url, name] = faqs[i]; videoOnClick(box, url, q, name); });
 }

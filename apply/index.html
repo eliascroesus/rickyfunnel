@@ -5,10 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Apply | Ricky</title>
 <meta name="description" content="How Ricky went from $16/hr to $10K in 3 days with YouTube Shorts. Apply for the 1-1 YouTube Shorts Dropshipping Mentorship.">
-<!-- Redesign preview: kept out of search results until it replaces the live pages. -->
-<meta name="robots" content="noindex">
 <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
-<link rel="icon" type="image/png" href="/favicon.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Ricky">
@@ -16,10 +13,12 @@
 <meta property="og:description" content="Started with $87 and $0 ad spend. 1-on-1 coaching, your store built with you and a private Discord.">
 <meta property="og:image" content="https://rickyshoffner.com/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Montserrat:wght@800&display=swap">
-<link rel="stylesheet" href="/redesign/style.css">
+<link rel="preload" href="/assets/site/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<!-- Connect to Vimeo early so the video starts sooner -->
+<link rel="preconnect" href="https://player.vimeo.com">
+<link rel="preconnect" href="https://i.vimeocdn.com">
+<link rel="preconnect" href="https://f.vimeocdn.com">
+<link rel="stylesheet" href="/assets/site/style.css">
 </head>
 <body data-page="apply">
 
@@ -44,7 +43,7 @@
       </div>
       <div class="booker__body" id="booker-body">
         <form class="booker__form" id="apply-form" novalidate>
-          <!-- Only for visitors who didn't come through /redesign/discord (removed by the script otherwise) -->
+          <!-- Only for visitors who didn't come through /discord (removed by the script otherwise) -->
           <div id="contact-fields">
             <div class="field">
               <label for="a-name">Full name&nbsp;<span class="req">*</span></label>
@@ -137,7 +136,7 @@
         <a class="nq__yt" id="nq-yt" href="https://www.youtube.com/@rickyyte" target="_blank" rel="noopener"><svg viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="5" fill="#fff"/><path d="M11 5.5v9l8-4.5z" fill="#ff0033"/></svg>Watch My Free Videos</a>
       </div>
     </section>
-    <!-- The offer's guarantee, under the form (only on the /redesign page 2s for now) -->
+    <!-- The offer's guarantee, under the form -->
     <div class="guarantee guarantee--under">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3z" fill="currentColor"/><path d="M8.5 12.2l2.4 2.4 4.8-5" fill="none" stroke="#241a02" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <p><b class="guarantee__tag">My Guarantee</b> Hit <b>$10K/month in your first 6 months</b>, or get a <b>full refund</b> plus <b>my personal help for free</b> until you do.</p>
@@ -167,17 +166,17 @@
           <p>I was working for <b>$16 an hour</b> and looking for a way out.</p></div>
       </article>
       <article class="story-card">
-        <img loading="lazy" src="/redesign/proof/label-roll.webp" width="640" height="853" alt="A roll of printed shipping labels">
+        <img loading="lazy" src="/assets/ricky/proof/label-roll.webp" width="640" height="853" alt="A roll of printed shipping labels">
         <div class="txt"><div class="when">Starting with $87</div>
           <p>I started with <b>$87</b>. I paid a mentor $1,500 to teach me and got scammed, so I figured it out myself.</p></div>
       </article>
       <article class="story-card">
-        <img loading="lazy" src="/redesign/proof/orders-to-ship.webp" width="640" height="853" alt="Orders stacked up and ready to ship">
+        <img loading="lazy" src="/assets/ricky/proof/orders-to-ship.webp" width="640" height="853" alt="Orders stacked up and ready to ship">
         <div class="txt"><div class="when">40+ products later</div>
           <p>I tested <b>40+ products</b> before one took off. Then my Shorts hit <b>18M views in a month</b>, with $0 ad spend.</p></div>
       </article>
       <article class="story-card">
-        <img loading="lazy" src="/redesign/proof/play-buttons-car.webp" width="640" height="853" alt="Two silver YouTube Play Buttons">
+        <img loading="lazy" src="/assets/ricky/proof/play-buttons-car.webp" width="640" height="853" alt="Two silver YouTube Play Buttons">
         <div class="txt"><div class="when">Today</div>
           <p><b>$10K in 3 days</b>, 91M views in a single month and two Silver Play Buttons.</p></div>
       </article>
@@ -187,7 +186,7 @@
 
 <footer>
   <div class="wrap">
-    <div class="brand"><img src="/favicon.png" alt="">Ricky</div>
+    <div class="brand"><img src="/assets/site/logo-56.png" width="28" height="28" loading="lazy" alt="">Ricky</div>
     <nav class="foot-nav"><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a><a href="/disclaimer">Earnings Disclaimer</a><a href="mailto:ricky@ytd.rickyshoffner.com">Contact</a></nav>
     <p><b>Earnings Disclaimer:</b> The results shown are Ricky's own and are <b>not typical</b>. <b>Most people who try dropshipping or e-commerce make little or no money, and many lose money.</b> We don't have data showing what a typical student earns, so don't expect results like these. Sales figures shown are revenue, not profit, before costs like products, shipping, fees, ads, refunds and taxes. We do not promise or guarantee that you will make any money; your results depend on your effort, skills, experience, budget and market conditions, and starting a business involves financial risk. Our content is for education only and is not financial, legal or tax advice. <a href="/disclaimer">Read the full Earnings Disclaimer</a>.</p>
     <p>This site is not part of the Facebook, Instagram or YouTube websites, or of Meta Platforms, Inc. or Google LLC, and is not endorsed by them in any way. Facebook and Instagram are trademarks of Meta Platforms, Inc. YouTube is a trademark of Google LLC.</p>
@@ -198,8 +197,10 @@
 <div class="sticky-cta" id="sticky-cta" data-hide=".booker"><a class="btn" href="#book">Apply For The Mentorship <span>→</span></a></div>
 <dialog class="zoom" id="zoom"><img alt=""></dialog>
 
-<script src="/assets/vimeo-player.min.js"></script>
-<script src="/assets/lead-form.js"></script>
-<script src="/redesign/funnel.js"></script>
+<!-- Analytics for /admin -->
+<script defer src="/assets/track.js"></script>
+<script defer src="/assets/vimeo-player.min.js"></script>
+<script defer src="/assets/lead-form.js"></script>
+<script defer src="/assets/site/funnel.js"></script>
 </body>
 </html>
