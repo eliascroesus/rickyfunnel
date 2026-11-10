@@ -44,7 +44,7 @@ const CONTACT_QUESTIONS = [
   { key: "name", type: "text", title: "First, what's your full name?", placeholder: "Full name", autocomplete: "name" },
   { key: "email", type: "email", title: "What's your email?", placeholder: "name@example.com", autocomplete: "email" },
   { key: "phone", type: "phone", title: "And your phone number?", placeholder: "Phone number",
-    consent: "By submitting, you agree to receive emails, calls and text messages (including automated ones) from Ricky Shoffner about the free Discord, your application and Ricky's free and paid programs, at the email and number you entered. Consent is not a condition of any purchase. Msg frequency varies. Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help. See our <a href=\"/privacy\">Privacy Policy</a> and <a href=\"/terms\">Terms</a>." },
+    consent: "By submitting, you consent to receive emails, calls and text messages (including automated ones) from Ricky Shoffner (YTDGrow LLC) about the free Discord, your application and Ricky's free and paid programs, at the email and number you entered. That's how we send you what you signed up for. Consent is not a condition of any purchase. Msg frequency varies. Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help. See our <a href=\"/privacy\">Privacy Policy</a> and <a href=\"/terms\">Terms</a>." },
 ];
 const QUESTIONS = [
   { key: "situation", type: "choice", title: "Which of these best describes your situation right now?",
