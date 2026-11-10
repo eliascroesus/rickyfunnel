@@ -18,7 +18,7 @@
   --danger: #f0506e;
   --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
-html { scroll-behavior: smooth; scroll-padding-top: 56px; }
+html { scroll-behavior: smooth; scroll-padding-top: 16px; }
 body {
   font-family: var(--font); background: var(--bg); color: var(--ink); line-height: 1.5;
   -webkit-font-smoothing: antialiased; overflow-x: hidden;
@@ -126,7 +126,7 @@ h2 { font-size: clamp(29px, 4.8vw, 48px); font-weight: 900; line-height: 1.08; l
   .hero h1 { font-size: 23px; letter-spacing: -.5px; margin-bottom: 16px; }
   .btn { padding: 14px 22px; font-size: 13.5px; gap: 8px; }
   .gbar { font-size: 11.5px; padding: 8px 12px; }
-  .step-h--gap { margin-top: 34px; }
+  .step-h--gap { margin-top: 52px; }
 }
 /* "Join The FREE Discord": the word FREE on a blue marker */
 .hl { display: inline-block; padding: 0 .2em; border-radius: 6px; background: var(--accent); color: var(--on-accent); box-shadow: 0 0 10px rgba(var(--accent-rgb), .3); }
