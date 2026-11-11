@@ -2,6 +2,7 @@
    <body data-page="…">). Leads go to the Google Sheet and from there to GoHighLevel. Page 2 is A/B tested:
    /apply (V1) = the form beside the calendar, /apply-2 (V2) = one question at a time.
    The previous design of these pages is kept at /old/discord, /old/apply, … (old/index.html).
+   /booking is just the calendar, for people the DM setters send a link to (after booking: /booked).
    Needs /assets/lead-form.js (phone rules, tidyName, emailOk), /assets/track.js (analytics for /admin) and, on the
    video pages, /assets/vimeo-player.min.js first. */
 
@@ -83,7 +84,7 @@ const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 const PAGE = document.body.dataset.page;
 // Analytics for /admin (assets/track.js). If that file didn't load, these do nothing and the page works as usual.
 const analytics = window.rt || { start() {}, set() {}, once() {}, label: () => "", video: () => ({ view() {}, time() {}, ended() {} }) };
-const TRACK_PAGE = { discord: "optin", apply: "apply", apply2: "apply2", booked: "booked" }[PAGE] || PAGE;
+const TRACK_PAGE = { discord: "optin", apply: "apply", apply2: "apply2", booked: "booked", booking: "booking" }[PAGE] || PAGE;
 
 // Kept in the browser for 30 days (shared with the live funnel), so a reload keeps what they entered.
 const store = {
@@ -631,8 +632,10 @@ function calendarSoon(form) {
 }
 function initCalendar() {
   const frame = $("#cal-frame");
-  if (!frame || !CONFIG.ghlCalendarUrl || !lead.email || frame.dataset.for === lead.email) return;
-  frame.dataset.for = lead.email;
+  // /booking: anyone can book (the calendar asks for their details); on page 2 it waits until we know who they are.
+  const anyone = PAGE === "booking", who = lead.email || (anyone ? "anyone" : "");
+  if (!frame || !CONFIG.ghlCalendarUrl || !who || frame.dataset.for === who) return;
+  frame.dataset.for = who;
   const [first, ...rest] = (lead.name || "").trim().split(/\s+/);
   const u = new URL(CONFIG.ghlCalendarUrl);
   // The calendar fills its booking form from these. Its form needs a last name, so a one-word name gets "-".
@@ -643,17 +646,21 @@ function initCalendar() {
 // GoHighLevel tells the page when the call is booked (["msgsndr-booking-complete", …]); then on to /booked.
 let bookingSent = false;
 addEventListener("message", e => {
-  if ((PAGE !== "apply" && PAGE !== "apply2") || bookingSent || !CONFIG.ghlCalendarUrl) return;
+  if (!["apply", "apply2", "booking"].includes(PAGE) || bookingSent || !CONFIG.ghlCalendarUrl) return;
   let fromGhl = false;
   try { fromGhl = /(^|\.)(leadconnectorhq\.com|msgsndr\.com)$/.test(new URL(e.origin).hostname) || e.origin === new URL(CONFIG.ghlCalendarUrl).origin; } catch {}
   const text = typeof e.data === "string" ? e.data : Array.isArray(e.data) ? String(e.data[0]) : "";
   if (!fromGhl || !/booking-complete/i.test(text)) return;
   bookingSent = true;
-  sendLead({ name: lead.name || "", email: lead.email || "", phone: lead.phone || "" }, "booked");
+  // The sheet finds their row by email, so only when we know it (on /booking the calendar takes their details).
+  if (lead.email) sendLead({ name: lead.name || "", email: lead.email, phone: lead.phone || "" }, "booked");
   analytics.once("s:booked", { now: true });
   store.set("booking", { bookedAt: Date.now() });
   setTimeout(() => go("booked"), 1500);
 });
+
+/* /booking: just the calendar. A link like /booking?name=…&email=…&phone=… fills in their details. */
+if (PAGE === "booking") initCalendar();
 
 /* ======================================================================= */
 /* /booked                                                         */

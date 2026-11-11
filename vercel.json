@@ -35,6 +35,10 @@
       "destination": "/booked/index.html"
     },
     {
+      "source": "/booking",
+      "destination": "/booking/index.html"
+    },
+    {
       "source": "/old/discord",
       "destination": "/old/index.html"
     },
