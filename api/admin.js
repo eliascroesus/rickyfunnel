@@ -152,9 +152,12 @@ async function live() {
   return { tz: TZ, today: t.day, now: Date.now(), day: numbers(day), hours: numbers(hours), feed: parseList(feed), live: liveNow(liveA, liveB) };
 }
 
+const RESERVED_SLUGS = new Set(["discord", "apply", "apply-2", "booked", "booking", "not-qualified", "embed", "privacy", "terms", "disclaimer", "admin", "old", "redesign", "api", "assets", "go", "ref", "index", "favicon", "robots", "sitemap"]);
 async function saveLink(body) {
   const slug = cleanSlug(body.slug);
   if (!slug) return [400, { error: "The link name can only use a–z, 0–9 and dashes (up to 40)." }];
+  // Links live straight on the domain (rickyshoffner.com/<name>), so they can't take a page's name.
+  if (RESERVED_SLUGS.has(slug)) return [400, { error: `"${slug}" is already a page on the site. Pick another name.` }];
   const name = String(body.name || "").trim().slice(0, 80) || slug;
   const channel = CHANNELS.includes(body.channel) ? body.channel : "other";
   let dest = String(body.dest || "/discord").trim().slice(0, 500);

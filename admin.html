@@ -10,7 +10,7 @@
   /admin: the funnel's analytics dashboard (served by vercel.json). Data comes from /api/admin, which needs
   the ADMIN_PASSWORD set on Vercel. Everything on this page is filtered by the date range, source and
   A/B version in the bar at the top. The numbers come from assets/track.js (on the funnel pages) and
-  /ref/<name> short links (links made earlier as /go/<name> still work). Setup steps: README.md → "Analytics dashboard (/admin)".
+  rickyshoffner.com/<name> short links (the same link also works as /go/<name> or /ref/<name>). Setup steps: README.md → "Analytics dashboard (/admin)".
 -->
 <style>
 :root {
@@ -418,7 +418,7 @@ dialog h2 { margin-bottom: 12px; }
     <section class="card" aria-labelledby="src-title">
       <div class="card__head"><h2 id="src-title">Traffic sources</h2><p>Click a row to filter the whole dashboard to it</p></div>
       <div class="table-wrap"><table id="src-table"></table></div>
-      <p class="note">“Clicks” counts taps on your <b>/ref/…</b> short links (bots and link previews left out). “Visitors” are the people who then loaded the funnel; the gap between them is people who left before the page opened. Sources without a short link are worked out from the site or app they came from.</p>
+      <p class="note">“Clicks” counts taps on your short links (<b>rickyshoffner.com/…</b>) (bots and link previews left out). “Visitors” are the people who then loaded the funnel; the gap between them is people who left before the page opened. Sources without a short link are worked out from the site or app they came from.</p>
     </section>
 
     <section class="card" aria-labelledby="vid-title">
@@ -487,7 +487,7 @@ dialog h2 { margin-bottom: 12px; }
       </form>
       <p class="error" id="link-error" hidden></p>
       <div class="made" id="link-made" hidden style="margin-top:14px"></div>
-      <p class="note">Short links look like <code id="example-link">/ref/ig-bio</code>. Each tap is counted, then the person goes straight on to the page, so it's as fast as a normal link. You can change where a link goes later without changing the link itself.</p>
+      <p class="note">Short links look like <code id="example-link">/ig-bio</code> (straight after your domain). Each tap is counted, then the person goes straight on to the page, so it's as fast as a normal link. You can change where a link goes later without changing the link itself.</p>
     </section>
     <section class="card">
       <div class="card__head"><h2>Your links</h2><p id="links-sub">Numbers for the date range at the top</p></div>
@@ -545,8 +545,10 @@ const BUTTONS = [["s:optin_error", "Saw an error on the opt-in form"], ["s:confi
 const DEVICES = { iphone: "iPhone", android: "Android", desktop: "Computer", tablet: "Tablet / iPad", mobile: "Other phone" };
 const APPS = { instagram: "Instagram app", tiktok: "TikTok app", facebook: "Facebook app", youtube: "YouTube app", snapchat: "Snapchat app", x: "X app", linkedin: "LinkedIn app",
   google: "Google app", safari: "Safari", chrome: "Chrome", firefox: "Firefox", edge: "Edge", samsung: "Samsung Internet", other: "Other" };
-// What tracked links look like: rickyshoffner.com/ref/<name>. (Links made earlier as /go/<name> still work.)
-const SHORT = "/ref/";
+// What tracked links look like: rickyshoffner.com/<name>. (The same link also works as /go/<name> or /ref/<name>.)
+const SHORT = "/";
+// Pages on the site: a link can't take one of these names.
+const RESERVED = new Set(["discord", "apply", "apply-2", "booked", "booking", "not-qualified", "embed", "privacy", "terms", "disclaimer", "admin", "old", "redesign", "api", "assets", "go", "ref", "index", "favicon", "robots", "sitemap"]);
 // A random 6-character key, for links where a name doesn't matter (e.g. one per video): no 0/o or 1/l, so it's
 // easy to read out, and never one that's already taken.
 function randomKey() {
@@ -554,7 +556,7 @@ function randomKey() {
   for (;;) {
     const bytes = crypto.getRandomValues(new Uint8Array(6));
     const k = [...bytes].map(b => abc[b % abc.length]).join("");
-    if (!S.links[k] && /[a-z]/.test(k[0])) return k;
+    if (!S.links[k] && !RESERVED.has(k) && /[a-z]/.test(k[0])) return k;
   }
 }
 const SUGGEST = [
@@ -1526,6 +1528,7 @@ linkForm.addEventListener("submit", async e => {
   const err = $("#link-error");
   err.hidden = true;
   const slug = linkForm.slug.value.trim();
+  if (RESERVED.has(slug)) { err.textContent = `"${slug}" is already a page on the site. Pick another name.`; err.hidden = false; return; }
   if (!linkForm.editing.value && S.links[slug] && !confirm(`${SHORT}${slug} already exists. Replace its settings?`)) return;
   const dest = linkForm.dest.value === "custom" ? linkForm.destUrl.value.trim() : linkForm.dest.value;
   try {

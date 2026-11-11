@@ -85,6 +85,10 @@
     {
       "source": "/go/:slug",
       "destination": "/api/go?slug=:slug"
+    },
+    {
+      "source": "/:slug([a-z0-9][a-z0-9-]*)",
+      "destination": "/api/go?slug=:slug&root=1"
     }
   ],
   "headers": [
