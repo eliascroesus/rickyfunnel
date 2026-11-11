@@ -1,6 +1,6 @@
 /* Funnel analytics for the /admin dashboard. Plain script, loaded before the page's own.
    Counts, per visitor (no names, emails or cookies, just a random id in this browser):
-     - page views, and which link brought them (a /go/<name> short link, ?utm_source=, the site they came
+     - page views, and which link brought them (a /ref/<name> short link, ?utm_source=, the site they came
        from, or the app they're in), remembered for 30 days like the UTMs for the sheet
      - funnel steps (opt-in, application, booking…), each counted once per person
      - video watching: who pressed play (with sound) and which 5% slices of each video they watched

@@ -79,6 +79,10 @@
       "destination": "/admin.html"
     },
     {
+      "source": "/ref/:slug",
+      "destination": "/api/go?slug=:slug"
+    },
+    {
       "source": "/go/:slug",
       "destination": "/api/go?slug=:slug"
     }

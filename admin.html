@@ -10,7 +10,7 @@
   /admin: the funnel's analytics dashboard (served by vercel.json). Data comes from /api/admin, which needs
   the ADMIN_PASSWORD set on Vercel. Everything on this page is filtered by the date range, source and
   A/B version in the bar at the top. The numbers come from assets/track.js (on the funnel pages) and
-  /go/<name> short links. Setup steps: README.md → "Analytics dashboard (/admin)".
+  /ref/<name> short links (links made earlier as /go/<name> still work). Setup steps: README.md → "Analytics dashboard (/admin)".
 -->
 <style>
 :root {
@@ -292,6 +292,8 @@ dialog h2 { margin-bottom: 12px; }
   .barrow, .bars-head { grid-template-columns: minmax(90px, 120px) 1fr 44px 46px; gap: 8px; }
   .abrow { grid-template-columns: 1fr; gap: 6px; }
 }
+.link-btn { margin-left: 8px; padding: 1px 8px; border: 1px solid currentColor; border-radius: 999px; background: none; color: inherit; font: inherit; font-size: .78em; opacity: .75; cursor: pointer; }
+.link-btn:hover { opacity: 1; }
 </style>
 </head>
 <body>
@@ -416,7 +418,7 @@ dialog h2 { margin-bottom: 12px; }
     <section class="card" aria-labelledby="src-title">
       <div class="card__head"><h2 id="src-title">Traffic sources</h2><p>Click a row to filter the whole dashboard to it</p></div>
       <div class="table-wrap"><table id="src-table"></table></div>
-      <p class="note">“Clicks” counts taps on your <b>/go/…</b> short links (bots and link previews left out). “Visitors” are the people who then loaded the funnel; the gap between them is people who left before the page opened. Sources without a short link are worked out from the site or app they came from.</p>
+      <p class="note">“Clicks” counts taps on your <b>/ref/…</b> short links (bots and link previews left out). “Visitors” are the people who then loaded the funnel; the gap between them is people who left before the page opened. Sources without a short link are worked out from the site or app they came from.</p>
     </section>
 
     <section class="card" aria-labelledby="vid-title">
@@ -469,12 +471,13 @@ dialog h2 { margin-bottom: 12px; }
           </select>
         </label>
         <label class="field"><span>Name (what it is)</span><input class="input" name="name" placeholder="e.g. Instagram bio" required maxlength="80"></label>
-        <label class="field"><span>Short link</span><input class="input mono" name="slug" placeholder="ig-bio" required pattern="[a-z0-9][a-z0-9\-]{0,39}" maxlength="40" title="a–z, 0–9 and dashes"></label>
+        <label class="field"><span>Short link <button type="button" class="link-btn" id="slug-random" title="Use a random 6-character key instead of a name, e.g. for one link per video">Random key</button></span><input class="input mono" name="slug" placeholder="ig-bio" required pattern="[a-z0-9][a-z0-9\-]{0,39}" maxlength="40" title="a–z, 0–9 and dashes"></label>
         <label class="field"><span>Goes to</span>
           <select class="select" name="dest">
             <option value="/discord">Opt-in page (/discord)</option>
             <option value="/apply">Application V1 (/apply)</option>
             <option value="/apply-2">Application V2 (/apply-2)</option>
+            <option value="/booking">Just the calendar (/booking)</option>
             <option value="custom">Another link…</option>
           </select>
         </label>
@@ -484,7 +487,7 @@ dialog h2 { margin-bottom: 12px; }
       </form>
       <p class="error" id="link-error" hidden></p>
       <div class="made" id="link-made" hidden style="margin-top:14px"></div>
-      <p class="note">Short links look like <code id="example-link">/go/ig-bio</code>. Each tap is counted, then the person goes straight on to the page, so it's as fast as a normal link. You can change where a link goes later without changing the link itself.</p>
+      <p class="note">Short links look like <code id="example-link">/ref/ig-bio</code>. Each tap is counted, then the person goes straight on to the page, so it's as fast as a normal link. You can change where a link goes later without changing the link itself.</p>
     </section>
     <section class="card">
       <div class="card__head"><h2>Your links</h2><p id="links-sub">Numbers for the date range at the top</p></div>
@@ -542,6 +545,18 @@ const BUTTONS = [["s:optin_error", "Saw an error on the opt-in form"], ["s:confi
 const DEVICES = { iphone: "iPhone", android: "Android", desktop: "Computer", tablet: "Tablet / iPad", mobile: "Other phone" };
 const APPS = { instagram: "Instagram app", tiktok: "TikTok app", facebook: "Facebook app", youtube: "YouTube app", snapchat: "Snapchat app", x: "X app", linkedin: "LinkedIn app",
   google: "Google app", safari: "Safari", chrome: "Chrome", firefox: "Firefox", edge: "Edge", samsung: "Samsung Internet", other: "Other" };
+// What tracked links look like: rickyshoffner.com/ref/<name>. (Links made earlier as /go/<name> still work.)
+const SHORT = "/ref/";
+// A random 6-character key, for links where a name doesn't matter (e.g. one per video): no 0/o or 1/l, so it's
+// easy to read out, and never one that's already taken.
+function randomKey() {
+  const abc = "abcdefghijkmnpqrstuvwxyz23456789";
+  for (;;) {
+    const bytes = crypto.getRandomValues(new Uint8Array(6));
+    const k = [...bytes].map(b => abc[b % abc.length]).join("");
+    if (!S.links[k] && /[a-z]/.test(k[0])) return k;
+  }
+}
 const SUGGEST = [
   ["youtube", "YouTube channel bio", "yt-bio"], ["youtube", "YouTube video description", "yt-desc"], ["youtube", "YouTube pinned comment", "yt-comment"],
   ["instagram", "Instagram bio", "ig-bio"], ["instagram", "Instagram story", "ig-story"], ["instagram", "Instagram DMs", "ig-dm"],
@@ -863,7 +878,7 @@ function renderSourceOptions() {
   Object.keys(CHANNELS).forEach(ch => {
     if (!byCh[ch]) return;
     const g = h("optgroup", { label: CHANNELS[ch] }, h("option", { value: "ch:" + ch }, "All " + CHANNELS[ch]));
-    byCh[ch].sort((a, b) => linkLabel(a).localeCompare(linkLabel(b))).forEach(l => g.append(h("option", { value: "ln:" + l }, linkLabel(l) + (isShort(l) ? "  (/go/" + l + ")" : ""))));
+    byCh[ch].sort((a, b) => linkLabel(a).localeCompare(linkLabel(b))).forEach(l => g.append(h("option", { value: "ln:" + l }, linkLabel(l) + (isShort(l) ? "  (" + SHORT + l + ")" : ""))));
     sel.append(g);
   });
   sel.value = keepVal;
@@ -1145,7 +1160,7 @@ function renderSources(f) {
       const short = isShort(link), def = S.links[link], selL = S.src === "ln:" + link;
       body.append(h("tr", { class: "link-row clickable", title: "Filter to " + linkLabel(link), onclick: () => setSrc(selL ? "" : "ln:" + link) },
         h("td", {}, h("span", { class: "cell-name" }, h("span", {}, linkLabel(link), short && !def ? h("span", { class: "badge badge--warn", style: { marginLeft: "6px" } }, "not set up") : null, selL ? h("span", { class: "badge", style: { marginLeft: "6px" } }, "filtered") : null),
-          short ? h("small", { class: "mono" }, "/go/" + link) : null)),
+          short ? h("small", { class: "mono" }, SHORT + link) : null)),
         ...cols.map(([k]) => h("td", {}, k === "clicks" && !short ? h("span", { class: "muted" }, "–") : cell(dd, k)))));
     });
   });
@@ -1352,12 +1367,12 @@ function renderLinks() {
   const table = $("#links-table");
   const body = h("tbody");
   slugs.sort((a, b) => (derive(per[b] || {}).clicks - derive(per[a] || {}).clicks) || a.localeCompare(b)).forEach(slug => {
-    const def = S.links[slug], d = derive(per[slug] || {}), url = origin + "/go/" + slug;
+    const def = S.links[slug], d = derive(per[slug] || {}), url = origin + SHORT + slug;
     const ch = channelOf(slug);
     body.append(h("tr", {},
       h("td", {}, h("span", { class: "cell-name" }, h("span", {}, h("span", { class: "dot", style: { background: `var(--c-${ch})` } }), def ? def.name : slug, !def ? h("span", { class: "badge badge--warn", style: { marginLeft: "6px" } }, "not set up") : null),
         h("small", {}, def ? (PLATFORM[def.channel] || def.channel) + " · goes to " + def.dest : "Someone used this link before it was made here"))),
-      h("td", { style: { textAlign: "left" } }, h("span", { class: "short" }, h("code", {}, "/go/" + slug), h("button", { class: "btn", type: "button", onclick: () => copy(url) }, "Copy"))),
+      h("td", { style: { textAlign: "left" } }, h("span", { class: "short" }, h("code", {}, SHORT + slug), h("button", { class: "btn", type: "button", onclick: () => copy(url) }, "Copy"))),
       h("td", {}, fmt(d.clicks)), h("td", {}, fmt(d.visitors)), h("td", {}, fmt(d.optins)), h("td", {}, fmt(d.booked)),
       h("td", {}, h("button", { class: "btn btn--ghost", type: "button", onclick: () => editLink(slug) }, def ? "Edit" : "Set up"),
         def ? h("button", { class: "btn btn--ghost btn--danger", type: "button", onclick: () => removeLink(slug) }, "Remove") : null)));
@@ -1376,7 +1391,7 @@ function suggestSlug() {
   const platform = slugify(PLATFORM[form.channel.value] || "");
   if (platform && name.startsWith(platform)) name = name.slice(platform.length).replace(/^-/, "");
   form.slug.value = [pre, name].filter(Boolean).join("-").slice(0, 40);
-  $("#example-link").textContent = "/go/" + (form.slug.value || "ig-bio");
+  $("#example-link").textContent = SHORT + (form.slug.value || "ig-bio");
 }
 function editLink(slug) {
   // A link that was used before it was made here: guess where it's posted from its name (yt-…, ig-…).
@@ -1387,7 +1402,7 @@ function editLink(slug) {
   form.name.value = def.name;
   form.slug.value = slug;
   form.slug.readOnly = true;
-  const known = ["/discord", "/apply", "/apply-2"].includes(def.dest);
+  const known = ["/discord", "/apply", "/apply-2", "/booking"].includes(def.dest);
   form.dest.value = known ? def.dest : "custom";
   form.destUrl.value = known ? "" : def.dest;
   $("#dest-custom").hidden = known;
@@ -1406,7 +1421,7 @@ function resetLinkForm() {
   $("#link-save").textContent = "Make link";
 }
 async function removeLink(slug) {
-  if (!confirm(`Remove /go/${slug}? Anyone who taps it after this still reaches the opt-in page, and its numbers stay.`)) return;
+  if (!confirm(`Remove ${SHORT}${slug}? Anyone who taps it after this still reaches the opt-in page, and its numbers stay.`)) return;
   const r = await api("unlink", { body: { slug } });
   setLinks(r.links);
   render();
@@ -1489,7 +1504,7 @@ const linkForm = $("#link-form");
 SUGGEST.forEach(([channel, name, slug]) => $("#suggest").append(h("button", { type: "button", onclick: () => {
   resetLinkForm();
   linkForm.channel.value = channel; linkForm.name.value = name; linkForm.slug.value = slug;
-  $("#example-link").textContent = "/go/" + slug;
+  $("#example-link").textContent = SHORT + slug;
   linkForm.name.focus();
 } }, "+ " + name)));
 linkForm.name.addEventListener("input", suggestSlug);
@@ -1497,7 +1512,13 @@ linkForm.channel.addEventListener("change", suggestSlug);
 linkForm.slug.addEventListener("input", () => {
   slugTouched = true;
   linkForm.slug.value = linkForm.slug.value.toLowerCase().replace(/[^a-z0-9-]/g, "-");
-  $("#example-link").textContent = "/go/" + (linkForm.slug.value || "ig-bio");
+  $("#example-link").textContent = SHORT + (linkForm.slug.value || "ig-bio");
+});
+$("#slug-random").addEventListener("click", () => {
+  if (linkForm.slug.readOnly) return;   // an existing link keeps its address
+  slugTouched = true;
+  linkForm.slug.value = randomKey();
+  $("#example-link").textContent = SHORT + linkForm.slug.value;
 });
 linkForm.dest.addEventListener("change", () => { $("#dest-custom").hidden = linkForm.dest.value !== "custom"; });
 linkForm.addEventListener("submit", async e => {
@@ -1505,12 +1526,12 @@ linkForm.addEventListener("submit", async e => {
   const err = $("#link-error");
   err.hidden = true;
   const slug = linkForm.slug.value.trim();
-  if (!linkForm.editing.value && S.links[slug] && !confirm(`/go/${slug} already exists. Replace its settings?`)) return;
+  if (!linkForm.editing.value && S.links[slug] && !confirm(`${SHORT}${slug} already exists. Replace its settings?`)) return;
   const dest = linkForm.dest.value === "custom" ? linkForm.destUrl.value.trim() : linkForm.dest.value;
   try {
     const r = await api("link", { body: { slug, name: linkForm.name.value.trim(), channel: linkForm.channel.value, dest } });
     setLinks(r.links);
-    const url = location.origin + "/go/" + r.link.slug;
+    const url = location.origin + SHORT + r.link.slug;
     const made = $("#link-made");
     made.replaceChildren(h("span", {}, linkForm.editing.value ? "Saved: " : "Your link: "), h("code", {}, url), h("button", { class: "btn btn--primary", type: "button", onclick: () => copy(url) }, "Copy link"),
       h("span", { class: "muted" }, "Use this one only in " + r.link.name + "."));

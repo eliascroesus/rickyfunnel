@@ -16,7 +16,7 @@ YouTube Shorts dropshipping funnel. Each page is a folder with an `index.html`; 
 The previous design of these pages is kept, unlinked and out of search results, at `/old/discord`, `/old/apply`,
 `/old/apply-2`, `/old/booked` and `/old/not-qualified` (all one file, `old/index.html`). Its leads are marked
 "Old V1" / "Old V2" in the sheet and it isn't counted on /admin. Images and clips live in `assets/ricky/`.
-It also serves the analytics dashboard at `/admin` and the tracked short links at `/go/<name>` (see below).
+It also serves the analytics dashboard at `/admin` and the tracked short links at `/ref/<name>` (see below; links made earlier as `/go/<name>` still work).
 
 ## Hosting
 
@@ -91,7 +91,7 @@ Until the database is connected, the pages work exactly as before and simply don
 
 Make one link per place you post, in **/admin → Tracked links** (there are one-click presets for YouTube bio,
 video description, pinned comment, Instagram bio/story/DMs, TikTok bio…). Each looks like
-`https://rickyshoffner.com/go/ig-story`: it counts the tap, then sends the person straight on to the opt-in
+`https://rickyshoffner.com/ref/ig-story`: it counts the tap, then sends the person straight on to the opt-in
 page (or `/apply`, `/apply-2`, or any other link you choose) with `?ref=ig-story` added, so every page after it
 knows where they came from. You can change where a link goes later without changing the link.
 
@@ -116,7 +116,7 @@ visits on this browser"; on your phone, open any funnel page with `?rt=off` at t
   or cookies), and sends small batches of events to `/api/e`: page views, funnel steps (each once per person),
   and which 5% parts of each video were watched with sound. The VSL autoplays muted, so only watching after
   "Click to listen" (or play) counts; skipping ahead doesn't count the part skipped.
-- `api/go.js` handles `/go/<name>`; `api/admin.js` serves the dashboard's data behind `ADMIN_PASSWORD`;
+- `api/go.js` handles `/ref/<name>` (and the older `/go/<name>`); `api/admin.js` serves the dashboard's data behind `ADMIN_PASSWORD`;
   `api/_lib/store.js` holds the shared database code (Upstash's REST API, no packages to install).
 - Counts are stored per day, link and A/B version (plus per month for long ranges), so the dashboard stays fast
   for any date range. Upstash's free plan (256 MB, 500K commands a month) covers a lot of traffic; each event batch

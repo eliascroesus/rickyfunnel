@@ -1,4 +1,5 @@
-/* Tracked short links: rickyshoffner.com/go/<name> (vercel.json sends /go/<name> here as ?slug=<name>).
+/* Tracked short links: rickyshoffner.com/ref/<name> (vercel.json sends /ref/<name> here as ?slug=<name>; links made
+   earlier as /go/<name> keep working the same way).
    Counts the click, then sends the person on to the link's destination (the /discord opt-in unless the
    link says otherwise) with ?ref=<name> added, so every page after it knows which link they came from.
    Make and name links on /admin → Links. A name that was never set up still works and is counted, and
